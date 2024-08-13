@@ -34,7 +34,8 @@ void Logger::SetupConsole(bool free) {
         PostMessage(myConsole, WM_CLOSE, 0, 0);
 
     }
-    AllocConsole();
+    if (!GetConsoleWindow())
+        AllocConsole();
     this->out = GetStdHandle(STD_OUTPUT_HANDLE);
     freopen_s((FILE **) stdout, "CONOUT$", "w", stdout);
     CONSOLE_SCREEN_BUFFER_INFOEX info;

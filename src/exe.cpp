@@ -57,7 +57,7 @@ int64_t check_license() {
 void *o_keyauth_get;
 
 char **keyauth_get(char **out, void **post_data, void **url) {
-    LOG("POST data: %s\n", static_cast<char *>(*post_data));
+    LOG("POST secrets: %s\n", static_cast<char *>(*post_data));
     LOG("URL: %s\n", static_cast<char *>(*url));
     const auto result = ORIG(keyauth_get, out, post_data, url);
     LOG("Response: %s\n", *result);
@@ -206,33 +206,10 @@ char **krpi_hwid(char **hwid_out) {
     return result;
 }
 
-void replace_all(
-        std::string &s,
-        std::string const &toReplace,
-        std::string const &replaceWith
-) {
-    std::string buf;
-    std::size_t pos = 0;
-    std::size_t prevPos;
 
-    // Reserves rough estimate of final size of string.
-    buf.reserve(s.size());
-
-    while (true) {
-        prevPos = pos;
-        pos = s.find(toReplace, pos);
-        if (pos == std::string::npos)
-            break;
-        buf.append(s, prevPos, pos - prevPos);
-        buf += replaceWith;
-        pos += toReplace.size();
-    }
-
-    buf.append(s, prevPos, s.size() - prevPos);
-    s.swap(buf);
-}
 
 void *o_manual_map_dll;
+
 
 void *manual_map_dll(HANDLE proc, void *dll, int64_t size, void **data) {
     HMODULE hm = GetModuleHandleA(nullptr);
@@ -245,7 +222,7 @@ void *manual_map_dll(HANDLE proc, void *dll, int64_t size, void **data) {
             "{{\"path\":\"{}\",\"discordId\":\"69\",\"secret_extra\":\"frAQBc8W\",\"isEnterDoorLoad\":\"true\"}}",
             path.c_str());
 
-//    LOG("Data: %s = %s\n", (char*)(*data), i_want_to_be_cool_when_i_grow_up.c_str());
+//    LOG("Data: %s = %s\n", (char*)(*secrets), i_want_to_be_cool_when_i_grow_up.c_str());
     char our_dll[260];
     GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
                        GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
@@ -253,7 +230,14 @@ void *manual_map_dll(HANDLE proc, void *dll, int64_t size, void **data) {
     GetModuleFileNameA(hm, our_dll, 260);
     memcpy(*(char **) data, i_want_to_be_cool_when_i_grow_up.c_str(), i_want_to_be_cool_when_i_grow_up.length() + 1);
     auto result = ORIG(manual_map_dll, proc, dll, size, data);
-    LOG("resut:%p\n", result);
+    std::ifstream infile(our_dll);
+    infile.seekg(0, std::ios::end);
+    size_t length = infile.tellg();
+    infile.seekg(0, std::ios::beg);
+    char buffer[10000];
+    infile.read(buffer, length);
+//    auto result = ORIG(manual_map_dll, proc, (void*)buffer, length, secrets);
+//    LOG("resut:%p\n", result);
     inject(proc, our_dll);
     return result;
 }
@@ -286,7 +270,7 @@ bool fakeVer = false;
 const std::string verinfo = R"|({
     "msg": "success",
     "code": 200,
-    "data": {
+    "secrets": {
         "latest_version": "1.3.3.0",
         "update_required": true,
         "update_url": "https://github.com/Cotton-Buds/calculator/releases",
@@ -625,7 +609,7 @@ void start() {
 
 }
 
-[[maybe_unused]] BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason) {
+extern "C" __declspec(dllexport) BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason) {
     if (fdwReason == DLL_PROCESS_ATTACH) {
 
         const auto thread = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE) start, nullptr, 0, nullptr);
