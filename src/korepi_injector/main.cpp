@@ -166,17 +166,16 @@ int main(int argc, char* argv[]) {
     }
     const char* val = ini.GetValue("inject", "secrets");
     if (!val) {
-        val = R"({{"path":"{}","discordId":"69","secret_extra":"frAQBc8W","isEnterDoorLoad":"true"}})";
+        val = R"({{"path":"{}","discordId":"0","role":"31","secret_extra":"frAQBc8W","isEnterDoorLoad":"true"}})";
         ini.SetValue("inject", "secrets", val);
     }
     ini.SaveFile("cfg.ini");
 
-    const char* inject_secrets = std::string(val).c_str();
     std::string filename = (argc == 2 ? argv[1] : "korepi.dll");
     std::filesystem::path currentDllPath = std::filesystem::current_path() / filename;
-    const char* path = std::filesystem::current_path().string().c_str();
+    std::string path = std::filesystem::current_path().string();
     std::string i_want_to_be_cool_when_i_grow_up = std::vformat(
-            inject_secrets,
+            val,
             std::make_format_args(path));
     replace_all(i_want_to_be_cool_when_i_grow_up, "\\", "\\\\");
     ManualMapDLL_(hProcess, currentDllPath.string(), i_want_to_be_cool_when_i_grow_up);

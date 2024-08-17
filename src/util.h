@@ -11,25 +11,54 @@
 #include "Logger.h"
 #include "MinHook.h"
 
+
 bool bypass_vmp() {
     const auto ntdll = GetModuleHandle(L"ntdll.dll");
-    uint8_t callcode = ((uint8_t *) GetProcAddress(ntdll, "NtQuerySection"))[4] - 1;
+    bool isWine = (GetProcAddress(ntdll, "wine_get_version") != NULL);
+    BYTE callcode = ((BYTE *)GetProcAddress(ntdll, isWine ? "NtPulseEvent" : "NtQuerySection"))[4] - 1;
+    BYTE callcodeNtq = ((BYTE *)GetProcAddress(ntdll,  "NtQuerySection"))[4] - 1;
+    BYTE callcodeNtp = ((BYTE *)GetProcAddress(ntdll,  "NtProtectVirtualMemory"))[4];
+
+    LOG("We are drinking: %s\n", isWine?"wine" : "water");
+
     uint8_t restore[] = {0x4C, 0x8B, 0xD1, 0xB8, callcode};
     volatile auto ntProtectVirtualMemory = (uint8_t *) GetProcAddress(ntdll, "NtProtectVirtualMemory");
     while (true) {
-        if (ntProtectVirtualMemory[0] != 0x4C) {
+//        if (ntProtectVirtualMemory[0] != 0x4C) {
             DWORD oldProtect;
-            VirtualProtect((LPVOID) ntProtectVirtualMemory, sizeof(restore), PAGE_EXECUTE_READWRITE, &oldProtect);
+            LOG("We are about to patch vp.\n");
+            VirtualProtect((LPVOID) ntProtectVirtualMemory, 1, PAGE_EXECUTE_READWRITE, &oldProtect);
+            for (int i=0; i < 5; i++) {
+                LOG("ntp: %x\n", ((BYTE *)GetProcAddress(ntdll,  "NtProtectVirtualMemory"))[i]);
+
+            }
+            LOG("patching. %x %x %x\n", callcode, callcodeNtq, callcodeNtp);
             memcpy(ntProtectVirtualMemory, restore, sizeof(restore));
-            VirtualProtect((LPVOID) ntProtectVirtualMemory, sizeof(restore), oldProtect, nullptr);
+            LOG("patched. oldprot: %d\n", oldProtect);
+
+            VirtualProtect((LPVOID) ntProtectVirtualMemory, 1, oldProtect, &oldProtect);
             LOG("Bypassed VMP\n");
             return true;
-        } else {
-            LOG("Nothing seems to be hooking NtProtectVirtualMemory\n");
-            return false;
-        }
+//        } else {
+//            LOG("Nothing seems to be hooking NtProtectVirtualMemory\n");
+//            return false;
+//        }
     }
 }
+
+//bool bypass_vmp() {
+//    // restore hook at NtProtectVirtualMemory
+//    DWORD oldProtect;
+//    auto ntdll = GetModuleHandleA("ntdll.dll");
+//    bool isWine = (GetProcAddress(ntdll, "wine_get_version") != NULL);
+//    LOG("We are drinking: %s\n", isWine?"wine" : "water");
+//    BYTE callCode = ((BYTE *)GetProcAddress(ntdll, isWine ? "NtPulseEvent" : "NtQuerySection"))[4] - 1;
+//    BYTE restore[] = { 0x4C, 0x8B, 0xD1, 0xB8, callCode };
+//    auto nt_vp = (BYTE *)GetProcAddress(ntdll, "NtProtectVirtualMemory");
+//    VirtualProtect(nt_vp, sizeof(restore), PAGE_EXECUTE_READWRITE, &oldProtect);
+//    memcpy(nt_vp, restore, sizeof(restore));
+//    VirtualProtect(nt_vp, sizeof(restore), oldProtect, &oldProtect);
+//}
 
 uintptr_t scan_manual(uint8_t *start, unsigned long size_of_image, const char *pattern) {
     static auto pattern_to_byte = [](const char *pattern) {

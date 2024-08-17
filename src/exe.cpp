@@ -459,6 +459,12 @@ BOOL __stdcall write_process_memory(
 
 #pragma endregion
 
+void* o_minty_unk;
+void minty_unk(char arg1, void* arg2, int32_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg7, char arg8, char arg9, char arg10, char arg11, char arg12)
+{
+    return ORIG(minty_unk, 0, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12);
+}
+
 void start() {
     int i = 0;
     HMODULE hm = GetModuleHandleA(nullptr);
@@ -511,8 +517,8 @@ void start() {
             }
         }
         Sleep(500);
-//        API_HOOK("kernel32.dll", "WriteProcessMemory", write_process_memory);
-//
+        API_HOOK("kernel32.dll", "WriteProcessMemory", write_process_memory);
+
         bypass_vmp();
         HOOK_IF_FOUND_MANUAL((uint8_t *) base, expectedRegion, "curl_easy_setopt",
                              "89 54 24 10 4C 89 44 24 18 4C 89 4C 24 20 48 83 EC 28 48 85 C9",
@@ -581,7 +587,8 @@ void start() {
 
 //    HOOK_IF_FOUND("MintyZZZ.dll", "system_error", SYSERR_SIG, check_license)
     HOOK_IF_FOUND("MintyZZZ.dll", "Alert", "4C 89 4C 24 ? 53 56 57 48 83 EC ? 41 8B F8", alert);
-
+    HOOK_IF_FOUND("MintyZZZ.dll", "someone tell me what the fuck is happening here", "44 8B 74 24 ?? 44 8B 7C 24 ?? 44 8B 64 24 ?? 44 8B 6C 24 ?? 84 C0", minty_unk);
+    if (o_minty_unk != nullptr) return;
     HOOK_IF_FOUND("MintyZZZ.dll", "system_error ", SYSERR_SIG, system_error)
     HOOK_IF_FOUND("MintyZZZ.dll", "KeyAuth constructor", KACTR, ka_constructor)
     HOOK_IF_FOUND("MintyZZZ.dll", "KeyAuth init", KEYAUTH_INIT_SIG, ka_init)
