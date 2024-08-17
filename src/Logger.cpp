@@ -82,15 +82,18 @@ bool Logger::Printf(const char *type, const char *line_number, unsigned short co
 
     SetConsoleTextAttribute(this->out, 0x000f);
     if (!WriteConsoleA(this->out, "[", 1, nullptr, nullptr)) {
-        SetupConsole(true);
-        this->ColorPrint("Welcome", 0x3);
-        this->ColorPrint(" back", 0xa);
-        this->ColorPrint(" to ", 0x3);
-        this->ColorPrint("CrackPipe", 0xd);
-        this->ColorPrint("!!!\n", 0x4);
-        this->ReplayLog();
-        this->Error(STR(__LINE__), "The console was fucked up, a new one has been allocated!\n");
-        return false;
+        Sleep(300);
+        if (!WriteConsoleA(this->out, "[", 1, nullptr, nullptr)) {
+            SetupConsole(true);
+            this->ColorPrint("Welcome", 0x3);
+            this->ColorPrint(" back", 0xa);
+            this->ColorPrint(" to ", 0x3);
+            this->ColorPrint("CrackPipe", 0xd);
+            this->ColorPrint("!!!\n", 0x4);
+            this->ReplayLog();
+            this->Error(STR(__LINE__), "The console was fucked up, a new one has been allocated!\n");
+            return false;
+        }
     }
     this->ColorPrint(this->name, 0x000d);
     WriteConsoleA(this->out, ":", 1, nullptr, nullptr);
