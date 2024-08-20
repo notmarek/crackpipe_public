@@ -4,3 +4,6 @@
 [submodule "simpleini"]
 	path = simpleini
 	url = https://github.com/brofield/simpleini.git
+[submodule "zydis"]
+	path = zydis
+	url = https://github.com/zyantific/zydis
