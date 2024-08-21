@@ -14,7 +14,9 @@
 #include "util.h"
 
 #ifdef CRACKPIPEDEV
+
 #include "Zydis/Zydis.h"
+
 #endif
 
 // well-known sigs
@@ -211,7 +213,6 @@ char **krpi_hwid(char **hwid_out) {
 }
 
 
-
 void *o_manual_map_dll;
 
 
@@ -297,7 +298,7 @@ const std::string verinfo = R"|({
     },
     "sign2": "eMDldspy36kqMIRWWiGE/3J2e6/KAWdC8heSec80zZV8Ck2Z6mesGxGM8hPPkJODChzi8fA6xILl1VdNrZcG7saYa3TL/cyngmiofl0ZO52gepyMqQTY9b91iV1cfPa4SiRaNIag/l/5yAXaCLIyd5SkJ5ie3zu8xw9Pc9UM0CAGcdOO8HlnQNzRyoUtJoGcezdio7rsX/bLPbKC7zx7V1na7y9HULBKjQ1ysDJaRhBFpUthDKD5DZS4zzSWOnST5nc129X/XDDL9H9taRrUwECPnMe1dKjW/dvReKpheimmPLPYr425kTKPUbOh/wVVJuPR0cstrikuDrvxx4JmOw=="
 })|";
-    const std::string resp = R"({"msg": "AtZAfcAb+qtSipkXI9CP8u5XUYPGyCbGq5C/VYyt6tcelFYehMuYs0q8m/q+RwGx0/jOB3jDRAqjcqmunJpoKrIFV9W/YC9wzY+GaSU2L8oNQHlpx9KgJ0K50aqwxQD0dKiWmd16b76sLCn8GvpVrSk1k6SoFtUtPe30Cf1BkOsFD2oxSGBioUK22MkPFO2uj5xIXfZ5tC1dB4cS5ttzVlDiLPXY1hlJBqgFpZTj8znRz5qpMhflK5euefmKRPTKzwt+JHFF2YImsmDf49bMCgS6ZIwHL/jbK8dRJwFRjfkZjvpw2XxrL3wKubLqZKjUG3lHP6oKijmcWFTeu68xHphRKmqy43Gg3MZ1wCoYwcQL6tPPoqMy6TJwJdt/mBfhklPRq0XcTAjpnTIJeIo7zH/L1kFaGRAVFtqbwGLIIN08bb+7/tV3MOOc8BEp4RCb721hakBRNFqJAeYrt7yzr/VeK2igLuByrTcBkd0SOIB5LgI5K/qrMf/90bB8sfcicIgJXSVxyuuov45UXM2Rdo4YiL5M8b4LCJwhEkmplS8=", "code": 200})";
+const std::string resp = R"({"msg": "AtZAfcAb+qtSipkXI9CP8u5XUYPGyCbGq5C/VYyt6tcelFYehMuYs0q8m/q+RwGx0/jOB3jDRAqjcqmunJpoKrIFV9W/YC9wzY+GaSU2L8oNQHlpx9KgJ0K50aqwxQD0dKiWmd16b76sLCn8GvpVrSk1k6SoFtUtPe30Cf1BkOsFD2oxSGBioUK22MkPFO2uj5xIXfZ5tC1dB4cS5ttzVlDiLPXY1hlJBqgFpZTj8znRz5qpMhflK5euefmKRPTKzwt+JHFF2YImsmDf49bMCgS6ZIwHL/jbK8dRJwFRjfkZjvpw2XxrL3wKubLqZKjUG3lHP6oKijmcWFTeu68xHphRKmqy43Gg3MZ1wCoYwcQL6tPPoqMy6TJwJdt/mBfhklPRq0XcTAjpnTIJeIo7zH/L1kFaGRAVFtqbwGLIIN08bb+7/tV3MOOc8BEp4RCb721hakBRNFqJAeYrt7yzr/VeK2igLuByrTcBkd0SOIB5LgI5K/qrMf/90bB8sfcicIgJXSVxyuuov45UXM2Rdo4YiL5M8b4LCJwhEkmplS8=", "code": 200})";
 const std::string oldresp =
         R"({"msg": "vpJSftgQ2noDAZR3Iri/ForvdhDZvxwlJCXowV9TgKSs+BoMyBMOIuxjpDcMTSov1thaXhg/d9aAKcpxOP6glQ3bSd8bHIGMku3Ck/33VdYhtzx4HwC4Lel5mVGZ9+2jffsIgHyIwxMl+8kYwh/QGQRlkC8zFfyNaMszsZiOxIJCy/RMYfI3buvCDPH/4D1/VxysPnaX+QtrVrs7Bt74byqnd38bi0GhpllEWL7CO+7fI+vMe2OSv6s0CUaOqzhDC5N8wIkHsthyVyP+GYoltTov3Bu5iaxmgZc/eYQPTkTWQ759pIVNjKJwnQI3EtOEdrRog6LAkA/CMGwMwBkScvY508Z3KhnNqqIIF9RpYLI6rdST+o2t5gIK4sElQg/2wHZT6wSm23t7YdxnwzEFZysv/H0y63iI4NMUmyZIkRvCyxlWVMpTt/rV9qubdbCjGDxG7A/0LbxCJBfBgEWu4Krpp1S+hk4qgIB+2apCh5sxU76mLzQdFLzNrgmbQADapyDO6rWw777F9FKlo/r9II8kISi/+2FxXp7TZE3ALbcyUo7zKucahsq7u9ucENm64D3PKV4YZCHchQY7xyYI4DaC1PQzleJxGaGbCoBQ0PZK7f33d3N3qB10OaEfe2de4uTcOKbVAjtjSLrlZcMGiZd40Bho76xCtcgAKG2FDxbH/PJo4BoIYwqiDzqpmxXBOsn0JqKLGLaAyU840GAgyLO62lE7/A26w+B9q7hkOIcKlfXZpdwjsll/dADe2U/uF5nrLxEOUGDx9gbUoB95KLD1S3KCCyaLuv8j4imt2E9EgDzk/1XdIwnbPGAECajV5z4yTpMuyD9XBhmJQIFutw==", "code": 200})";
 
@@ -370,7 +371,7 @@ int64_t strtoimax_hk(int64_t *arg1) {
     return ORIG(strtoimax_hk, arg1);
 }
 
-bool init = false;
+bool init = true;
 bool dll_dumped = false;
 
 BOOL __stdcall write_process_memory(
@@ -381,29 +382,16 @@ BOOL __stdcall write_process_memory(
         SIZE_T *e
 ) {
     int i = 0;
+    LOG("Hello! %x\n", d);
     if (!init) {
-        MEMORY_BASIC_INFORMATION mbi;
-        bool foundBase = false;
-        const auto expectedRegion = 0x3d3000;
-        char *base = nullptr;
-
-        while (!foundBase) {
-            base = nullptr;
-            while (VirtualQuery(base, &mbi, sizeof(mbi)) == sizeof(MEMORY_BASIC_INFORMATION)) {
-                if (mbi.RegionSize == expectedRegion) {
-                    foundBase = true;
-                    break;
-                }
-
-                base += mbi.RegionSize;
-            }
-        }
-        bypass_vmp();
-        HOOK_IF_FOUND_MANUAL((uint8_t *) base, expectedRegion, "curl_easy_setopt",
-                             "89 54 24 10 4C 89 44 24 18 4C 89 4C 24 20 48 83 EC 28 48 85 C9",
-                             curl_easy_setopt);
-        HOOK_IF_FOUND_MANUAL((uint8_t *) base, expectedRegion, "curl_easy_perform",
-                             "40 55 56 48 83 EC 38 48 8B F1 48 85 C9 75 0A 8D", curl_easy_perform);
+//        bypass_vmp();
+//        HOOK_IF_FOUND(nullptr, "manual_map", "48 89 5C 24 ? 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 F0 BF FF FF",
+//                      manual_map_dll);
+//        HOOK_IF_FOUND_MANUAL((uint8_t *) base, expectedRegion, "curl_easy_setopt",
+//                             "89 54 24 10 4C 89 44 24 18 4C 89 4C 24 20 48 83 EC 28 48 85 C9",
+//                             curl_easy_setopt);
+//        HOOK_IF_FOUND_MANUAL((uint8_t *) base, expectedRegion, "curl_easy_perform",
+//                             "40 55 56 48 83 EC 38 48 8B F1 48 85 C9 75 0A 8D", curl_easy_perform);
 //        MH_CreateHook((void *) strtoimax, strtoimax_hk, &o_strtoimax_hk);
 //        MH_EnableHook((void *) strtoimax);
         init = true;
@@ -418,7 +406,8 @@ BOOL __stdcall write_process_memory(
 //        HOOK_IF_FOUND(nullptr, "connectWrite", "40 53 B8 20 00 00 00 E8 ?? ?? ?? ?? 48 2B E0 48 83 79 30 00", return_true);
 //        HOOK_IF_FOUND(nullptr, "connectWrite2", "B8 38 00 00 00 E8 ?? ?? ?? ?? 48 2B E0 45 85 C0 79 2A BA D0 00 00 00", return_true);
 //        HOOK_IF_FOUND(nullptr, "read", "B8 38 00 00 00 E8 ?? ?? ?? ?? 48 2B E0 45 85 C0 79 2A BA DF 00 00 00", read);
-    } else if (d == 0x1000 && !dll_dumped) {
+    } else if ((d == 0x1000 || d == 0x2e8) && !dll_dumped) {
+        LOG("hello we are dumping");
         const auto p_src_data = static_cast<const BYTE *>(c);
         auto p_nt_headers = reinterpret_cast<const IMAGE_NT_HEADERS *>(p_src_data +
                                                                        reinterpret_cast<const IMAGE_DOS_HEADER *>(p_src_data)->e_lfanew);
@@ -462,51 +451,64 @@ BOOL __stdcall write_process_memory(
 //}
 
 #pragma endregion
-char* base = nullptr;
-void* o_aes_dec;
-void** aes_dec(void** out, void** arg2, void** arg3, void** arg4) {
-    LOG("a2: %s, a3: %s, a4: %s\n", *(char**)arg2, *(char**)arg3, *(char**)arg4);
+char *base = nullptr;
+void *o_aes_dec;
+
+void **aes_dec(void **out, void **arg2, void **arg3, void **arg4) {
+    LOG("a2: %s, a3: %s, a4: %s\n", *(char **) arg2, *(char **) arg3, *(char **) arg4);
     ORIG(aes_dec, out, arg2, arg3, arg4);
-    LOG("out: %s\n", *(char**)out);
+    LOG("out: %s\n", *(char **) out);
 
     return out;
 }
 
-void* o_parseRes;
-uint64_t parseRes(int64_t* arg1, void** arg2, int64_t arg3, void** arg4, void** key) {
-    LOG("lol: %s %s", *(char**)arg2, *(char**)key);
+void *o_parseRes;
+
+uint64_t parseRes(int64_t *arg1, void **arg2, int64_t arg3, void **arg4, void **key) {
+    LOG("lol: %s %s", *(char **) arg2, *(char **) key);
 //    auto result = ORIG(parseRes, arg1, arg2, arg3, arg4, key);
 //    LOG("REsult: %d %x\n", result, result);
 //    int32_t* role = (int32_t*)(base + 0x56dcbc);
 //    *role = 31;
+    unhook_and_leave();
     return 0x1;
 }
+
 #ifdef CRACKPIPEDEV
-void print_zydis(CHAR* cool_shit) {
-    ZyanU64 runtime_address = (ZyanU64)cool_shit;
+
+void print_zydis(CHAR *cool_shit) {
+    ZyanU64 runtime_address = (ZyanU64) cool_shit;
     ZyanUSize offset = 0;
     ZydisDisassembledInstruction instruction;
     while (ZYAN_SUCCESS(ZydisDisassembleIntel(
             /* machine_mode:    */ ZYDIS_MACHINE_MODE_LONG_64,
             /* runtime_address: */ runtime_address,
             /* buffer:          */ cool_shit + offset,
-            /* length:          */ 32 - offset,
+            /* length:          */ 128 - offset,
             /* instruction:     */ &instruction
     ))) {
-        LOG(" %s\n",  instruction.text);
-
+        DBG(" %s\n", instruction.text);
         offset += instruction.info.length;
         runtime_address += instruction.info.length;
     }
 }
+
 #endif
-void* o_minty_unk;
-void minty_unk(char arg1, void* arg2, int32_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg7, char arg8, char arg9, char arg10, char arg11, char arg12)
-{
+void *o_minty_unk;
+
+void minty_unk(char arg1, void *arg2, int32_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg7, char arg8,
+               char arg9, char arg10, char arg11, char arg12) {
     return ORIG(minty_unk, 0, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12);
 }
 
-void start() {
+struct StartupData {
+    void *pBase;
+    void *korepibase;
+};
+
+void start(StartupData *startupData) {
+    void *korepibase = startupData->korepibase;
+    BYTE *pBase = (BYTE *) startupData->pBase;
     int i = 0;
     HMODULE hm = GetModuleHandleA(nullptr);
     char module_path[260];
@@ -537,47 +539,72 @@ void start() {
                         "\n        `:::::`::::::::;' /  / `:#"
                         "\n         ::::::`:::::;'  /  /   `#\n", 0xd | FOREGROUND_INTENSITY);
     MH_STATUS status = MH_Initialize();
-    LOG("Initialized MinHook: %s\n", MH_StatusToString(status));
-    if (module_path_str.ends_with("GenshinImpact.exe")) {
-        LOG("We are inside Genshin!\n");
-//        API_HOOK("kernel32.dll", "GetSystemTimeAsFileTime", GetSystemTimeAsFileTime_hk);
-        MEMORY_BASIC_INFORMATION mbi;
-        bool foundBase = false;
-        const auto expectedRegion = 0x3d3000;
+    char *endptr;
 
-
-        while (!foundBase) {
-            base = nullptr;
-            while (VirtualQuery(base, &mbi, sizeof(mbi)) == sizeof(MEMORY_BASIC_INFORMATION)) {
-                if (mbi.RegionSize == expectedRegion) {
-                    foundBase = true;
-                    break;
-                }
-
-                base += mbi.RegionSize;
-            }
+    LOG("our base is at %p\n", pBase);
+    auto *pOpt = &reinterpret_cast<IMAGE_NT_HEADERS *>(pBase +
+                                                       reinterpret_cast<IMAGE_DOS_HEADER *>((uintptr_t) pBase)->e_lfanew)->OptionalHeader;
+    if (pOpt->DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size) {
+        auto *pImportDescr = reinterpret_cast<IMAGE_IMPORT_DESCRIPTOR *>(pBase +
+                                                                         pOpt->DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
+        while (pImportDescr->Name) {
+            char *szMod = reinterpret_cast<char *>(pBase + pImportDescr->Name);
+            DBG("Loading %s again so we can safely detach.\n", szMod);
+            LoadLibraryA(szMod);
+            ++pImportDescr;
         }
-        Sleep(500);
-//        API_HOOK("kernel32.dll", "WriteProcessMemory", write_process_memory);
+    }
 
+
+//    LoadLibraryA("Kernel32.dll");
+//    LoadLibraryA("ntdll.dll");
+//    LoadLibraryA("ucrtbase.dll");
+//    LoadLibraryA("VCRUNTIME140.dll");
+//    LoadLibraryA("MSVCP140.dll");
+//    LoadLibraryA("api-ms-crt-stdio-l1-1-0.dll");
+//    LoadLibraryA("api-ms-crt-runtime-l1-1-0.dll");
+//    LoadLibraryA("api-ms-crt-heap-l1-1-0.dll");
+//    LoadLibraryA("api-ms-crt-convert-l1-1-0.dll");
+
+    LOG("Initialized MinHook: %s\n", MH_StatusToString(status));
+    if (korepibase != nullptr) {
+        base = (char *) strtoumax((char *) korepibase, &endptr, 16) + 0x1000; // +0x1000 to skip the header region
+        LOG("Korepi base @ %p\n", base);
+        free(korepibase);
+        LOG("We are inside Genshin!\n");
+        MEMORY_BASIC_INFORMATION mbi;
+        size_t korepi_region_size;
+        (void) VirtualQuery(base, &mbi, sizeof(mbi));
+        korepi_region_size = mbi.RegionSize;
+
+        DBG("Korepi RegionSize: %x\n", korepi_region_size);
+//        Sleep(500);
         bypass_vmp();
 //        HOOK_IF_FOUND_MANUAL((uint8_t *) base, expectedRegion, "aes", "4C 8B DC 53 56 57 41 54 41 55", aes_dec);
 
 //        BYTE callcode = ((BYTE *)GetProcAddress(ntdll, isWine ? "NtPulseEvent" : "NtQuerySection"))[4]
         //        89 05 e7 a1 53 00 48 8d 8c 24 40 02 00 00
-        int32_t* role = (int32_t*)(base + 0x56dccc);
-        int32_t* isretard = (int32_t*)(base + 0x56dcc8);
-        *role = 31;
-        *isretard = 0;
+        int32_t *role = (int32_t *) (base + 0x56dccc);
+//        int32_t *isretard = (int32_t *) (base + 0x56dcc8);
+        if (*role == (int32_t)1) {
+            LOG("role is at %p\n", role);
+            *role = 31;
+        }
+
+//        *isretard = 0;
 //        void* o_lol;
-//        void* lol = (void*)scan_manual((uint8_t*)base, expectedRegion, "E8 ? ? ? ? 83 3D AF 74 53 00 00");
+//        void* lol = (void*)scan_manual((uint8_t*)base, korepi_region_size, "E8 ? ? ? ? 83 3D AF 74 53 00 00");
 //        LOG("lol is at %p\n", lol);
-//        HOOK_IF_FOUND_MANUAL((uint8_t*)base, expectedRegion, "yo", "48 8D 94 24 ? ? ? ? 48 83 BC 24 78 03 00 00 10", lol);
-        HOOK_IF_FOUND_MANUAL((uint8_t *) base, expectedRegion, "parseResponse", "40 53 56 57 41 54 41 55 41 56 41 57 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 84 24 ? ? ? ? 4C 89 8C 24 ? ? ? ?", parseRes);
-        HOOK_IF_FOUND_MANUAL((uint8_t *) base, expectedRegion, "curl_easy_setopt",
+//        HOOK_IF_FOUND_MANUAL((uint8_t*)base, korepi_region_size, "yo", "48 8D 94 24 ? ? ? ? 48 83 BC 24 78 03 00 00 10", lol);
+        HOOK_IF_FOUND_MANUAL((uint8_t *) base, korepi_region_size, "parseResponse",
+                             "40 53 56 57 41 54 41 55 41 56 41 57 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 84 24 ? ? ? ? 4C 89 8C 24 ? ? ? ?",
+                             parseRes);
+        HOOK_IF_FOUND_MANUAL((uint8_t *) base, korepi_region_size, "curl_easy_setopt",
                              "89 54 24 10 4C 89 44 24 18 4C 89 4C 24 20 48 83 EC 28 48 85 C9",
                              curl_easy_setopt);
-//        BYTE* cool_shit = (BYTE*)scan_manual((uint8_t *) base, expectedRegion,
+        HOOK_IF_FOUND_MANUAL((uint8_t *) base, korepi_region_size, "curl_easy_perform",
+                             "40 55 56 48 83 EC 38 48 8B F1 48 85 C9 75 0A 8D", curl_easy_perform);
+//        BYTE* cool_shit = (BYTE*)scan_manual((uint8_t *) base, expectedRegion,W
 //                                             "C7 05 ? ? ? ? ? ? ? ? B9 ? ? ? ?");
 //        LOG("Cool shit @ %p\n", cool_shit);
 //
@@ -590,10 +617,31 @@ void start() {
 //        LOG("Cool shit2 @ %p\n", cool_shit2);
 //        print_zydis((CHAR*)cool_shit2);
 //
-//        BYTE* cool_shit3 = (BYTE*)scan_manual((uint8_t *) base, expectedRegion,
-//                                              "8B 05 ? ? ? ? FF C8");
-//        LOG("Cool shit3 @ %p\n", cool_shit3);
-//        print_zydis((CHAR*)cool_shit3);
+#ifdef CRACKPIPEDEV
+        BYTE *cool_shit3 = (BYTE *) scan_manual((uint8_t *) base, korepi_region_size,
+                                                "8B 05 ? ? ? ? FF C8");
+        LOG("Cool shit3 @ %p\n", cool_shit3);
+        print_zydis((CHAR *) cool_shit3);
+
+        auto runtime_address = (ZyanU64) cool_shit3;
+        ZyanUSize offset = 0;
+        ZydisDisassembledInstruction instruction;
+        ZydisDisassembleIntel(
+                /* machine_mode:    */ ZYDIS_MACHINE_MODE_LONG_64,
+                /* runtime_address: */ runtime_address,
+                /* buffer:          */ cool_shit3 + offset,
+                /* length:          */ 8 - offset,
+                /* instruction:     */ &instruction
+        );
+
+        ZyanU64 result;
+        ZydisCalcAbsoluteAddress(&instruction.info, &instruction.operands[instruction.info.operand_count_visible - 1],
+                                 runtime_address, &result);
+        LOG("Role value is stored at base + 0x%x its value is %d\n", result - (ZyanU64) base, *(int *) result);
+        if (*(int *) result == 1)
+            *(int*)result = 31;
+        LOG(" %s\n", instruction.text);
+#endif
 //
 //        BYTE* cool_shit4 = (BYTE*)scan_manual((uint8_t *) base, expectedRegion,
 //                                              "48 83 EC ? 8B 05 ? ? ? ? 85 C0 75 04 33 C9 CD 29 83 3D EF EF 3B 00 01");
@@ -604,22 +652,11 @@ void start() {
         // that the code being disassembled was read from.
 
 //        API_HOOK("comdlg32.dll", "GetOpenFileNameW", GetOpenFileNameW_hk);
-        HOOK_IF_FOUND_MANUAL((uint8_t *) base, expectedRegion, "curl_easy_perform",
-                             "40 55 56 48 83 EC 38 48 8B F1 48 85 C9 75 0A 8D", curl_easy_perform);
+
 //        MH_CreateHook((void *) strtoimax, strtoimax_hk, &o_strtoimax_hk);
 //        MH_EnableHook((void *) strtoimax);
         return;
     };
-
-    LoadLibraryA("Kernel32.dll");
-    LoadLibraryA("ntdll.dll");
-    LoadLibraryA("ucrtbase.dll");
-    LoadLibraryA("VCRUNTIME140.dll");
-    LoadLibraryA("MSVCP140.dll");
-    LoadLibraryA("api-ms-crt-stdio-l1-1-0.dll");
-    LoadLibraryA("api-ms-crt-runtime-l1-1-0.dll");
-    LoadLibraryA("api-ms-crt-heap-l1-1-0.dll");
-    LoadLibraryA("api-ms-crt-convert-l1-1-0.dll");
 
     HOOK_IF_FOUND_AND(nullptr, "Inject",
                       "40 53 55 56 57 41 56 48 83 EC ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 44 24 ? 48 8B E9", minty_inject)
@@ -628,9 +665,15 @@ void start() {
     }
     VehUtils::veh_hooks = std::vector<VehHook>();
     VehUtils::bypass_addrs = std::vector<void *>();
-    bool was_vmp_bypassed = bypass_vmp();
+//    bool was_vmp_bypassed = bypass_vmp();
 //    API_HOOK("kernel32.dll", "LoadResource", loadrsrc);
 //    API_HOOK("kernel32.dll", "LockResource", lockrsrc);
+//    HOOK_IF_FOUND(nullptr, "manual_map", "48 89 5C 24 ? 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 F0 BF FF FF",
+//                  manual_map_dll);
+    if (module_path_str.ends_with("AkebiLauncher.exe")) {
+        API_HOOK("kernel32.dll", "WriteProcessMemory", write_process_memory);
+        return;
+    }
     if (module_path_str.ends_with("korepi.exe")) {
         old_launcher = true;
 //        HOOK_IF_FOUND(nullptr, "HWID", "48 89 5C 24 10 48 89 7C 24 18 55 48 8D 6C", krpi_hwid);
@@ -666,7 +709,8 @@ void start() {
 
 //    HOOK_IF_FOUND("MintyZZZ.dll", "system_error", SYSERR_SIG, check_license)
     HOOK_IF_FOUND("MintyZZZ.dll", "Alert", "4C 89 4C 24 ? 53 56 57 48 83 EC ? 41 8B F8", alert);
-    HOOK_IF_FOUND("MintyZZZ.dll", "someone tell me what the fuck is happening here", "44 8B 74 24 ?? 44 8B 7C 24 ?? 44 8B 64 24 ?? 44 8B 6C 24 ?? 84 C0", minty_unk);
+    HOOK_IF_FOUND("MintyZZZ.dll", "someone tell me what the fuck is happening here",
+                  "44 8B 74 24 ?? 44 8B 7C 24 ?? 44 8B 64 24 ?? 44 8B 6C 24 ?? 84 C0", minty_unk);
     if (o_minty_unk != nullptr) return;
     HOOK_IF_FOUND("MintyZZZ.dll", "system_error ", SYSERR_SIG, system_error)
     HOOK_IF_FOUND("MintyZZZ.dll", "KeyAuth constructor", KACTR, ka_constructor)
@@ -695,10 +739,19 @@ void start() {
 
 }
 
-extern "C" __declspec(dllexport) BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason) {
+extern "C" __declspec(dllexport) BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, const char *korepibase) {
     if (fdwReason == DLL_PROCESS_ATTACH) {
-
-        const auto thread = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE) start, nullptr, 0, nullptr);
+//        std::string krpi_base = std::string(korepibase);
+//        MessageBoxA(nullptr, korepibase, "jell", 1);
+        StartupData *startupData;
+        startupData = (StartupData *) malloc(sizeof(StartupData));
+        startupData->korepibase = nullptr;
+        if (korepibase != nullptr) {
+            startupData->korepibase = malloc(strlen(korepibase));
+            memcpy(startupData->korepibase, korepibase, strlen(korepibase) + 1);
+        }
+        startupData->pBase = hinstDLL;
+        const auto thread = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE) start, startupData, 0, nullptr);
         DisableThreadLibraryCalls(hinstDLL);
         if (thread) {
             CloseHandle(thread);

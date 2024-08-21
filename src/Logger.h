@@ -63,7 +63,11 @@ inline Logger g_logger;
 
 #define LOG(fmt, ...) g_logger.Info(STR(__LINE__), fmt, __VA_ARGS__)
 #define ERR(fmt, ...) g_logger.Error(STR(__LINE__), fmt, __VA_ARGS__)
+#ifdef CRACKPIPEDEV
 #define DBG(fmt, ...) g_logger.Debug(STR(__LINE__), fmt, __VA_ARGS__)
+#else
+#define DBG(...)
+#endif
 #define SUC(fmt, ...) g_logger.Success(STR(__LINE__), fmt, __VA_ARGS__)
 
 #endif //LOL_LOGGER_H

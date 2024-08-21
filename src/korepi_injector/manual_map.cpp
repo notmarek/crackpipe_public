@@ -15,22 +15,22 @@
 #define CURRENT_ARCH IMAGE_FILE_MACHINE_I386
 #endif
 
-using f_LoadLibraryA = HINSTANCE(WINAPI*)(const char* lpLibFilename);
-using f_GetProcAddress = FARPROC(WINAPI*)(HMODULE hModule, LPCSTR lpProcName);
-using f_DLL_ENTRY_POINT = BOOL(WINAPI*)(void* hDll, DWORD dwReason, void* pReserved);
+using f_LoadLibraryA = HINSTANCE(WINAPI *)(const char *lpLibFilename);
+using f_GetProcAddress = FARPROC(WINAPI *)(HMODULE hModule, LPCSTR lpProcName);
+using f_DLL_ENTRY_POINT = BOOL(WINAPI *)(void *hDll, DWORD dwReason, void *pReserved);
+
 
 #ifdef _WIN64
-using f_RtlAddFunctionTable = BOOL(WINAPIV*)(PRUNTIME_FUNCTION FunctionTable, DWORD EntryCount, DWORD64 BaseAddress);
+using f_RtlAddFunctionTable = BOOL(WINAPIV *)(PRUNTIME_FUNCTION FunctionTable, DWORD EntryCount, DWORD64 BaseAddress);
 #endif
 
-struct MANUAL_MAPPING_DATA
-{
+struct MANUAL_MAPPING_DATA {
     f_LoadLibraryA pLoadLibraryA;
     f_GetProcAddress pGetProcAddress;
 #ifdef _WIN64
     f_RtlAddFunctionTable pRtlAddFunctionTable;
 #endif
-    BYTE* pbase;
+    BYTE *pbase;
     HINSTANCE hMod;
     DWORD fdwReasonParam;
     LPVOID reservedParam;
@@ -39,13 +39,11 @@ struct MANUAL_MAPPING_DATA
 };
 
 
-bool ManualMapDLL_(HANDLE hProc, const std::string& filepath, const std::string& security)
-{
+void *ManualMapDLL_(HANDLE hProc, const std::string &filepath, const std::string &security) {
     std::ifstream file(filepath, std::ios::in | std::ios::binary | std::ios::ate);
-    if (!file.is_open())
-    {
-        std::cout << "Error while reading DLL file!" << std::endl;
-        return false;
+    if (!file.is_open()) {
+        ERR("Error while reading DLL file!\n");
+        return nullptr;
     }
 
     std::streampos size = file.tellg();
@@ -54,55 +52,58 @@ bool ManualMapDLL_(HANDLE hProc, const std::string& filepath, const std::string&
     file.read(memblock, size);
     file.close();
 
-    BYTE* fileContent = (BYTE*)memblock;
+    BYTE *fileContent = (BYTE *) memblock;
 
     // Manual map injection will help us to be like an assassin
-    bool result = ManualMapDLL(hProc, fileContent, size, security);
+    auto result = ManualMapDLL(hProc, fileContent, size, security);
 
     delete[] memblock;
 
     return result;
 }
 
-MANUAL_MAPPING_DATA* __stdcall Shellcode(MANUAL_MAPPING_DATA* pData);
+MANUAL_MAPPING_DATA *__stdcall Shellcode(MANUAL_MAPPING_DATA *pData);
 
-bool ManualMapDLL(HANDLE hProc, BYTE* pSrcData, SIZE_T FileSize, const std::string& security, bool ClearHeader, bool ClearNonNeededSections, bool AdjustProtections, bool SEHExceptionSupport, DWORD fdwReason) {
-    IMAGE_NT_HEADERS* pOldNtHeader = nullptr;
-    IMAGE_OPTIONAL_HEADER* pOldOptHeader = nullptr;
-    IMAGE_FILE_HEADER* pOldFileHeader = nullptr;
-    BYTE* pTargetBase = nullptr;
+void *ManualMapDLL(HANDLE hProc, BYTE *pSrcData, SIZE_T FileSize, const std::string &security, bool ClearHeader,
+                   bool ClearNonNeededSections, bool AdjustProtections, bool SEHExceptionSupport, DWORD fdwReason) {
+    IMAGE_NT_HEADERS *pOldNtHeader = nullptr;
+    IMAGE_OPTIONAL_HEADER *pOldOptHeader = nullptr;
+    IMAGE_FILE_HEADER *pOldFileHeader = nullptr;
+    BYTE *pTargetBase = nullptr;
 
-    if (reinterpret_cast<IMAGE_DOS_HEADER*>(pSrcData)->e_magic != 0x5A4D) { //"MZ"
-        LOG("[DLL injection] Invalid file\n");
-        return false;
+    if (reinterpret_cast<IMAGE_DOS_HEADER *>(pSrcData)->e_magic != 0x5A4D) { //"MZ"
+        ERR("[DLL injection] Invalid file\n");
+        return nullptr;
     }
 
-    pOldNtHeader = reinterpret_cast<IMAGE_NT_HEADERS*>(pSrcData + reinterpret_cast<IMAGE_DOS_HEADER*>(pSrcData)->e_lfanew);
+    pOldNtHeader = reinterpret_cast<IMAGE_NT_HEADERS *>(pSrcData +
+                                                        reinterpret_cast<IMAGE_DOS_HEADER *>(pSrcData)->e_lfanew);
     pOldOptHeader = &pOldNtHeader->OptionalHeader;
     pOldFileHeader = &pOldNtHeader->FileHeader;
 
     if (pOldFileHeader->Machine != CURRENT_ARCH) {
-        LOG("[DLL injection] Invalid platform.\n");
-        return false;
+        ERR("[DLL injection] Invalid platform.\n");
+        return nullptr;
     }
 
     LOG("[DLL injection] File ok\n");
 
-    pTargetBase = reinterpret_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, pOldOptHeader->SizeOfImage, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE));
+    pTargetBase = reinterpret_cast<BYTE *>(VirtualAllocEx(hProc, nullptr, pOldOptHeader->SizeOfImage,
+                                                          MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE));
     if (!pTargetBase) {
         ERR("[DLL injection] Target process memory allocation failed (ex)\n");
-        return false;
+        return nullptr;
     }
 
     DWORD oldp = 0;
     VirtualProtectEx(hProc, pTargetBase, pOldOptHeader->SizeOfImage, PAGE_EXECUTE_READWRITE, &oldp);
 
-    MANUAL_MAPPING_DATA data{ 0 };
+    MANUAL_MAPPING_DATA data{0};
     data.pLoadLibraryA = LoadLibraryA;
     data.pGetProcAddress = GetProcAddress;
     strcpy_s(data.secrets, security.c_str());
 #ifdef _WIN64
-    data.pRtlAddFunctionTable = (f_RtlAddFunctionTable)RtlAddFunctionTable;
+    data.pRtlAddFunctionTable = (f_RtlAddFunctionTable) RtlAddFunctionTable;
 #else
     SEHExceptionSupport = false;
 #endif
@@ -114,42 +115,45 @@ bool ManualMapDLL(HANDLE hProc, BYTE* pSrcData, SIZE_T FileSize, const std::stri
         ERR("[DLL injection] Can't write file header.\n");
 
         VirtualFreeEx(hProc, pTargetBase, 0, MEM_RELEASE);
-        return false;
+        return nullptr;
     }
 
-    IMAGE_SECTION_HEADER* pSectionHeader = IMAGE_FIRST_SECTION(pOldNtHeader);
+    IMAGE_SECTION_HEADER *pSectionHeader = IMAGE_FIRST_SECTION(pOldNtHeader);
     for (UINT i = 0; i != pOldFileHeader->NumberOfSections; ++i, ++pSectionHeader) {
         if (pSectionHeader->SizeOfRawData) {
-            if (!WriteProcessMemory(hProc, pTargetBase + pSectionHeader->VirtualAddress, pSrcData + pSectionHeader->PointerToRawData, pSectionHeader->SizeOfRawData, nullptr)) {
+            if (!WriteProcessMemory(hProc, pTargetBase + pSectionHeader->VirtualAddress,
+                                    pSrcData + pSectionHeader->PointerToRawData, pSectionHeader->SizeOfRawData,
+                                    nullptr)) {
                 ERR("[DLL injection] Can't map sections.\n");
                 VirtualFreeEx(hProc, pTargetBase, 0, MEM_RELEASE);
-                return false;
+                return nullptr;
             }
         }
     }
 
     //Mapping params
-    BYTE* MappingDataAlloc = reinterpret_cast<BYTE*>(VirtualAllocEx(hProc, nullptr, sizeof(MANUAL_MAPPING_DATA), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE));
+    BYTE *MappingDataAlloc = reinterpret_cast<BYTE *>(VirtualAllocEx(hProc, nullptr, sizeof(MANUAL_MAPPING_DATA),
+                                                                     MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE));
     if (!MappingDataAlloc) {
         ERR("[DLL injection] Target process mapping allocation failed (ex).\n");
         VirtualFreeEx(hProc, pTargetBase, 0, MEM_RELEASE);
-        return false;
+        return nullptr;
     }
 
     if (!WriteProcessMemory(hProc, MappingDataAlloc, &data, sizeof(MANUAL_MAPPING_DATA), nullptr)) {
         ERR("[DLL injection] Can't write mapping.\n");
         VirtualFreeEx(hProc, pTargetBase, 0, MEM_RELEASE);
         VirtualFreeEx(hProc, MappingDataAlloc, 0, MEM_RELEASE);
-        return false;
+        return nullptr;
     }
 
     //Shell code
-    void* pShellcode = VirtualAllocEx(hProc, nullptr, 0x1000, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+    void *pShellcode = VirtualAllocEx(hProc, nullptr, 0x1000, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
     if (!pShellcode) {
         ERR("[DLL injection] Memory shellcode allocation failed (ex).\n");
         VirtualFreeEx(hProc, pTargetBase, 0, MEM_RELEASE);
         VirtualFreeEx(hProc, MappingDataAlloc, 0, MEM_RELEASE);
-        return false;
+        return nullptr;
     }
 
     if (!WriteProcessMemory(hProc, pShellcode, Shellcode, 0x1000, nullptr)) {
@@ -157,7 +161,7 @@ bool ManualMapDLL(HANDLE hProc, BYTE* pSrcData, SIZE_T FileSize, const std::stri
         VirtualFreeEx(hProc, pTargetBase, 0, MEM_RELEASE);
         VirtualFreeEx(hProc, MappingDataAlloc, 0, MEM_RELEASE);
         VirtualFreeEx(hProc, pShellcode, 0, MEM_RELEASE);
-        return false;
+        return nullptr;
     }
 
     LOG("[DLL injection] Mapped DLL at %p\n", pTargetBase);
@@ -168,16 +172,17 @@ bool ManualMapDLL(HANDLE hProc, BYTE* pSrcData, SIZE_T FileSize, const std::stri
 
 #ifdef _DEBUG
     LOG("[DLL injection] My shellcode pointer %p\n", Shellcode);
-	LOG("[DLL injection] Target point %p\n", pShellcode);
+    LOG("[DLL injection] Target point %p\n", pShellcode);
 #endif
 
-    HANDLE hThread = CreateRemoteThread(hProc, nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(pShellcode), MappingDataAlloc, 0, nullptr);
+    HANDLE hThread = CreateRemoteThread(hProc, nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(pShellcode),
+                                        MappingDataAlloc, 0, nullptr);
     if (!hThread) {
         ERR("[DLL injection] Thread creation failed.\n");
         VirtualFreeEx(hProc, pTargetBase, 0, MEM_RELEASE);
         VirtualFreeEx(hProc, MappingDataAlloc, 0, MEM_RELEASE);
         VirtualFreeEx(hProc, pShellcode, 0, MEM_RELEASE);
-        return false;
+        return nullptr;
     }
     CloseHandle(hThread);
 
@@ -189,30 +194,29 @@ bool ManualMapDLL(HANDLE hProc, BYTE* pSrcData, SIZE_T FileSize, const std::stri
         GetExitCodeProcess(hProc, &exitcode);
         if (exitcode != STILL_ACTIVE) {
             LOG("[DLL injection] Process crashed, exit code: 0x%x\n", exitcode);
-            return false;
+            return nullptr;
         }
 
-        MANUAL_MAPPING_DATA data_checked{ 0 };
+        MANUAL_MAPPING_DATA data_checked{0};
         ReadProcessMemory(hProc, MappingDataAlloc, &data_checked, sizeof(data_checked), nullptr);
         hCheck = data_checked.hMod;
 //        LOG("data_checked: %s\n", &data_checked.secrets);
-        if (hCheck == (HINSTANCE)0x404040) {
+        if (hCheck == (HINSTANCE) 0x404040) {
             LOG("[DLL injection] Wrong mapping ptr.\n");
             VirtualFreeEx(hProc, pTargetBase, 0, MEM_RELEASE);
             VirtualFreeEx(hProc, MappingDataAlloc, 0, MEM_RELEASE);
             VirtualFreeEx(hProc, pShellcode, 0, MEM_RELEASE);
-            return false;
-        }
-        else if (hCheck == (HINSTANCE)0x505050) {
+            return nullptr;
+        } else if (hCheck == (HINSTANCE) 0x505050) {
             LOG("[DLL injection] WARNING: Exception support failed!\n");
         }
         Sleep(10);
     }
 
-    BYTE* emptyBuffer = (BYTE*)malloc(1024 * 1024 * 20);
+    BYTE *emptyBuffer = (BYTE *) malloc(1024 * 1024 * 20);
     if (emptyBuffer == nullptr) {
         LOG("[DLL injection] Unable to allocate memory\n");
-        return false;
+        return nullptr;
     }
     memset(emptyBuffer, 0, 1024 * 1024 * 20);
 
@@ -229,11 +233,12 @@ bool ManualMapDLL(HANDLE hProc, BYTE* pSrcData, SIZE_T FileSize, const std::stri
         pSectionHeader = IMAGE_FIRST_SECTION(pOldNtHeader);
         for (UINT i = 0; i != pOldFileHeader->NumberOfSections; ++i, ++pSectionHeader) {
             if (pSectionHeader->Misc.VirtualSize) {
-                if ((SEHExceptionSupport ? 0 : strcmp((char*)pSectionHeader->Name, ".pdata") == 0) ||
-                    strcmp((char*)pSectionHeader->Name, ".rsrc") == 0 ||
-                    strcmp((char*)pSectionHeader->Name, ".reloc") == 0) {
+                if ((SEHExceptionSupport ? 0 : strcmp((char *) pSectionHeader->Name, ".pdata") == 0) ||
+                    strcmp((char *) pSectionHeader->Name, ".rsrc") == 0 ||
+                    strcmp((char *) pSectionHeader->Name, ".reloc") == 0) {
                     LOG("[DLL injection] Processing %s removal\n", pSectionHeader->Name);
-                    if (!WriteProcessMemory(hProc, pTargetBase + pSectionHeader->VirtualAddress, emptyBuffer, pSectionHeader->Misc.VirtualSize, nullptr)) {
+                    if (!WriteProcessMemory(hProc, pTargetBase + pSectionHeader->VirtualAddress, emptyBuffer,
+                                            pSectionHeader->Misc.VirtualSize, nullptr)) {
                         ERR("[DLL injection] Can't clear section %s.\n", pSectionHeader->Name);
                     }
                 }
@@ -249,15 +254,15 @@ bool ManualMapDLL(HANDLE hProc, BYTE* pSrcData, SIZE_T FileSize, const std::stri
 
                 if ((pSectionHeader->Characteristics & IMAGE_SCN_MEM_WRITE) > 0) {
                     newP = PAGE_READWRITE;
-                }
-                else if ((pSectionHeader->Characteristics & IMAGE_SCN_MEM_EXECUTE) > 0) {
+                } else if ((pSectionHeader->Characteristics & IMAGE_SCN_MEM_EXECUTE) > 0) {
                     newP = PAGE_EXECUTE_READ;
                 }
-                if (VirtualProtectEx(hProc, pTargetBase + pSectionHeader->VirtualAddress, pSectionHeader->Misc.VirtualSize, newP, &old)) {
-                    LOG("[DLL injection] Section %s (%p size: %p) set as %lX\n", (char*)pSectionHeader->Name, pTargetBase + pSectionHeader->VirtualAddress, pSectionHeader->Misc.VirtualSize, newP);
-                }
-                else {
-                    LOG("[DLL injection] FAIL: section %s not set as %lX\n", (char*)pSectionHeader->Name, newP);
+                if (VirtualProtectEx(hProc, pTargetBase + pSectionHeader->VirtualAddress,
+                                     pSectionHeader->Misc.VirtualSize, newP, &old)) {
+                    LOG("[DLL injection] Section %s (%p size: %p) set as %lX\n", (char *) pSectionHeader->Name,
+                        pTargetBase + pSectionHeader->VirtualAddress, pSectionHeader->Misc.VirtualSize, newP);
+                } else {
+                    LOG("[DLL injection] FAIL: section %s not set as %lX\n", (char *) pSectionHeader->Name, newP);
                 }
             }
         }
@@ -275,7 +280,7 @@ bool ManualMapDLL(HANDLE hProc, BYTE* pSrcData, SIZE_T FileSize, const std::stri
         LOG("[DLL injection] WARNING: can't release mapping secrets memory\n");
     }
 
-    return true;
+    return pTargetBase;
 }
 
 #define RELOC_FLAG32(RelInfo) ((RelInfo >> 0x0C) == IMAGE_REL_BASED_HIGHLOW)
@@ -289,13 +294,15 @@ bool ManualMapDLL(HANDLE hProc, BYTE* pSrcData, SIZE_T FileSize, const std::stri
 
 #pragma runtime_checks( "", off )
 #pragma optimize( "", off )
-MANUAL_MAPPING_DATA* __stdcall Shellcode(MANUAL_MAPPING_DATA* pData) {
+
+MANUAL_MAPPING_DATA *__stdcall Shellcode(MANUAL_MAPPING_DATA *pData) {
     if (!pData) {
-        pData->hMod = (HINSTANCE)0x404040;
+        pData->hMod = (HINSTANCE) 0x404040;
         return pData;
     }
-    BYTE* pBase = pData->pbase;
-    auto* pOpt = &reinterpret_cast<IMAGE_NT_HEADERS*>(pBase + reinterpret_cast<IMAGE_DOS_HEADER*>((uintptr_t)pBase)->e_lfanew)->OptionalHeader;
+    BYTE *pBase = pData->pbase;
+    auto *pOpt = &reinterpret_cast<IMAGE_NT_HEADERS *>(pBase +
+                                                       reinterpret_cast<IMAGE_DOS_HEADER *>((uintptr_t) pBase)->e_lfanew)->OptionalHeader;
 
     auto _LoadLibraryA = pData->pLoadLibraryA;
     auto _GetProcAddress = pData->pGetProcAddress;
@@ -304,45 +311,49 @@ MANUAL_MAPPING_DATA* __stdcall Shellcode(MANUAL_MAPPING_DATA* pData) {
 #endif
     auto _DllMain = reinterpret_cast<f_DLL_ENTRY_POINT>(pBase + pOpt->AddressOfEntryPoint);
 
-    BYTE* LocationDelta = pBase - pOpt->ImageBase;
+    BYTE *LocationDelta = pBase - pOpt->ImageBase;
     if (LocationDelta) {
         if (pOpt->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size) {
-            auto* pRelocData = reinterpret_cast<IMAGE_BASE_RELOCATION*>(pBase + pOpt->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress);
-            const auto* pRelocEnd = reinterpret_cast<IMAGE_BASE_RELOCATION*>(reinterpret_cast<uintptr_t>(pRelocData) + pOpt->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size);
+            auto *pRelocData = reinterpret_cast<IMAGE_BASE_RELOCATION *>(pBase +
+                                                                         pOpt->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress);
+            const auto *pRelocEnd = reinterpret_cast<IMAGE_BASE_RELOCATION *>(reinterpret_cast<uintptr_t>(pRelocData) +
+                                                                              pOpt->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size);
             while (pRelocData < pRelocEnd && pRelocData->SizeOfBlock) {
                 UINT AmountOfEntries = (pRelocData->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(WORD);
-                WORD* pRelativeInfo = reinterpret_cast<WORD*>(pRelocData + 1);
+                WORD *pRelativeInfo = reinterpret_cast<WORD *>(pRelocData + 1);
 
                 for (UINT i = 0; i != AmountOfEntries; ++i, ++pRelativeInfo) {
                     if (RELOC_FLAG(*pRelativeInfo)) {
-                        UINT_PTR* pPatch = reinterpret_cast<UINT_PTR*>(pBase + pRelocData->VirtualAddress + ((*pRelativeInfo) & 0xFFF));
+                        UINT_PTR *pPatch = reinterpret_cast<UINT_PTR *>(pBase + pRelocData->VirtualAddress +
+                                                                        ((*pRelativeInfo) & 0xFFF));
                         *pPatch += reinterpret_cast<UINT_PTR>(LocationDelta);
                     }
                 }
-                pRelocData = reinterpret_cast<IMAGE_BASE_RELOCATION*>(reinterpret_cast<BYTE*>(pRelocData) + pRelocData->SizeOfBlock);
+                pRelocData = reinterpret_cast<IMAGE_BASE_RELOCATION *>(reinterpret_cast<BYTE *>(pRelocData) +
+                                                                       pRelocData->SizeOfBlock);
             }
         }
     }
 
     if (pOpt->DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size) {
-        auto* pImportDescr = reinterpret_cast<IMAGE_IMPORT_DESCRIPTOR*>(pBase + pOpt->DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
+        auto *pImportDescr = reinterpret_cast<IMAGE_IMPORT_DESCRIPTOR *>(pBase +
+                                                                         pOpt->DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
         while (pImportDescr->Name) {
-            char* szMod = reinterpret_cast<char*>(pBase + pImportDescr->Name);
+            char *szMod = reinterpret_cast<char *>(pBase + pImportDescr->Name);
             HINSTANCE hDll = _LoadLibraryA(szMod);
 
-            ULONG_PTR* pThunkRef = reinterpret_cast<ULONG_PTR*>(pBase + pImportDescr->OriginalFirstThunk);
-            ULONG_PTR* pFuncRef = reinterpret_cast<ULONG_PTR*>(pBase + pImportDescr->FirstThunk);
+            ULONG_PTR *pThunkRef = reinterpret_cast<ULONG_PTR *>(pBase + pImportDescr->OriginalFirstThunk);
+            ULONG_PTR *pFuncRef = reinterpret_cast<ULONG_PTR *>(pBase + pImportDescr->FirstThunk);
 
             if (!pThunkRef)
                 pThunkRef = pFuncRef;
 
             for (; *pThunkRef; ++pThunkRef, ++pFuncRef) {
                 if (IMAGE_SNAP_BY_ORDINAL(*pThunkRef)) {
-                    *pFuncRef = (ULONG_PTR)_GetProcAddress(hDll, reinterpret_cast<char*>(*pThunkRef & 0xFFFF));
-                }
-                else {
-                    auto* pImport = reinterpret_cast<IMAGE_IMPORT_BY_NAME*>(pBase + (*pThunkRef));
-                    *pFuncRef = (ULONG_PTR)_GetProcAddress(hDll, pImport->Name);
+                    *pFuncRef = (ULONG_PTR) _GetProcAddress(hDll, reinterpret_cast<char *>(*pThunkRef & 0xFFFF));
+                } else {
+                    auto *pImport = reinterpret_cast<IMAGE_IMPORT_BY_NAME *>(pBase + (*pThunkRef));
+                    *pFuncRef = (ULONG_PTR) _GetProcAddress(hDll, pImport->Name);
                 }
             }
             ++pImportDescr;
@@ -350,8 +361,9 @@ MANUAL_MAPPING_DATA* __stdcall Shellcode(MANUAL_MAPPING_DATA* pData) {
     }
 
     if (pOpt->DataDirectory[IMAGE_DIRECTORY_ENTRY_TLS].Size) {
-        auto* pTLS = reinterpret_cast<IMAGE_TLS_DIRECTORY*>(pBase + pOpt->DataDirectory[IMAGE_DIRECTORY_ENTRY_TLS].VirtualAddress);
-        auto* pCallback = reinterpret_cast<PIMAGE_TLS_CALLBACK*>(pTLS->AddressOfCallBacks);
+        auto *pTLS = reinterpret_cast<IMAGE_TLS_DIRECTORY *>(pBase +
+                                                             pOpt->DataDirectory[IMAGE_DIRECTORY_ENTRY_TLS].VirtualAddress);
+        auto *pCallback = reinterpret_cast<PIMAGE_TLS_CALLBACK *>(pTLS->AddressOfCallBacks);
         for (; pCallback && *pCallback; ++pCallback)
             (*pCallback)(pBase, DLL_PROCESS_ATTACH, nullptr);
     }
@@ -364,8 +376,8 @@ MANUAL_MAPPING_DATA* __stdcall Shellcode(MANUAL_MAPPING_DATA* pData) {
         auto excep = pOpt->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION];
         if (excep.Size) {
             if (!_RtlAddFunctionTable(
-                    reinterpret_cast<IMAGE_RUNTIME_FUNCTION_ENTRY*>(pBase + excep.VirtualAddress),
-                    excep.Size / sizeof(IMAGE_RUNTIME_FUNCTION_ENTRY), (DWORD64)pBase)) {
+                    reinterpret_cast<IMAGE_RUNTIME_FUNCTION_ENTRY *>(pBase + excep.VirtualAddress),
+                    excep.Size / sizeof(IMAGE_RUNTIME_FUNCTION_ENTRY), (DWORD64) pBase)) {
                 ExceptionSupportFailed = true;
             }
         }
@@ -374,7 +386,7 @@ MANUAL_MAPPING_DATA* __stdcall Shellcode(MANUAL_MAPPING_DATA* pData) {
 #endif
 
 
-    _DllMain(pBase, pData->fdwReasonParam, &pData->secrets);
+    _DllMain(pBase, pData->fdwReasonParam,  &pData->secrets);
 
     if (ExceptionSupportFailed)
         pData->hMod = reinterpret_cast<HINSTANCE>(0x505050);

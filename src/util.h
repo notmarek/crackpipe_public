@@ -15,34 +15,32 @@
 bool bypass_vmp() {
     const auto ntdll = GetModuleHandle(L"ntdll.dll");
     bool isWine = (GetProcAddress(ntdll, "wine_get_version") != NULL);
-    BYTE callcode = ((BYTE *)GetProcAddress(ntdll, isWine ? "NtPulseEvent" : "NtQuerySection"))[4] - 1;
-    BYTE callcodeNtq = ((BYTE *)GetProcAddress(ntdll,  "NtQuerySection"))[4] - 1;
-    BYTE callcodeNtp = ((BYTE *)GetProcAddress(ntdll,  "NtProtectVirtualMemory"))[4];
+    BYTE callcode = ((BYTE *) GetProcAddress(ntdll, isWine ? "NtPulseEvent" : "NtQuerySection"))[4] - 1;
+    BYTE callcodeNtq = ((BYTE *) GetProcAddress(ntdll, "NtQuerySection"))[4] - 1;
+    BYTE callcodeNtp = ((BYTE *) GetProcAddress(ntdll, "NtProtectVirtualMemory"))[4];
 
-    LOG("We are drinking: %s\n", isWine?"wine" : "water");
+    DBG("We are drinking: %s\n", isWine ? "wine" : "water");
 
     uint8_t restore[] = {0x4C, 0x8B, 0xD1, 0xB8, callcode};
     volatile auto ntProtectVirtualMemory = (uint8_t *) GetProcAddress(ntdll, "NtProtectVirtualMemory");
-    while (true) {
-//        if (ntProtectVirtualMemory[0] != 0x4C) {
-            DWORD oldProtect;
-            LOG("We are about to patch vp.\n");
-            VirtualProtect((LPVOID) ntProtectVirtualMemory, 1, PAGE_EXECUTE_READWRITE, &oldProtect);
-            for (int i=0; i < 5; i++) {
-                LOG("ntp: %x\n", ((BYTE *)GetProcAddress(ntdll,  "NtProtectVirtualMemory"))[i]);
+    if (ntProtectVirtualMemory[0] != 0x4C) {
+        DWORD oldProtect;
+        DBG("We are about to patch vp.\n");
+        VirtualProtect((LPVOID) ntProtectVirtualMemory, 1, PAGE_EXECUTE_READWRITE, &oldProtect);
+        for (int i = 0; i < 5; i++) {
+            DBG("ntp: %x\n", ((BYTE *) GetProcAddress(ntdll, "NtProtectVirtualMemory"))[i]);
 
-            }
-            LOG("patching. %x %x %x\n", callcode, callcodeNtq, callcodeNtp);
-            memcpy(ntProtectVirtualMemory, restore, sizeof(restore));
-            LOG("patched. oldprot: %d\n", oldProtect);
+        }
+        DBG("patching. %x %x %x\n", callcode, callcodeNtq, callcodeNtp);
+        memcpy(ntProtectVirtualMemory, restore, sizeof(restore));
+        DBG("patched. oldprot: %d\n", oldProtect);
 
-            VirtualProtect((LPVOID) ntProtectVirtualMemory, 1, oldProtect, &oldProtect);
-            LOG("Bypassed VMP\n");
-            return true;
-//        } else {
-//            LOG("Nothing seems to be hooking NtProtectVirtualMemory\n");
-//            return false;
-//        }
+        VirtualProtect((LPVOID) ntProtectVirtualMemory, 1, oldProtect, &oldProtect);
+        LOG("Bypassed VMP\n");
+        return true;
+    } else {
+        LOG("Nothing seems to be hooking NtProtectVirtualMemory\n");
+        return false;
     }
 }
 
@@ -102,6 +100,7 @@ uintptr_t scan_manual(uint8_t *start, unsigned long size_of_image, const char *p
     }
     return 0;
 }
+
 void replace_all(
         std::string &s,
         std::string const &toReplace,
@@ -171,6 +170,7 @@ void unhook_and_leave_thread() {
     remove_hooks();
 
     LOG("Freeing library and exiting thread! Goodbye~\n");
+    LOG("Anything that happens after this message is not my fault :)\n");
     HMODULE hm;
     GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
                        GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,

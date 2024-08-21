@@ -77,7 +77,7 @@ extern "C" __declspec(dllexport) void inject_into(HWND hwnd, HINSTANCE hinst, LP
     PROCESS_INFORMATION pi{};
     STARTUPINFOA si{};
 
-    if (target.string().ends_with("korepi.exe")) {
+    if (target.string().ends_with("korepi.exe") || target.string().ends_with("AkebiLauncher.exe")) {
         SHELLEXECUTEINFOA shExecInfo = {0};
         shExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
         shExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
@@ -93,6 +93,7 @@ extern "C" __declspec(dllexport) void inject_into(HWND hwnd, HINSTANCE hinst, LP
                                   target.parent_path().string().c_str(), &si, &pi)) {
             ERR("Failed to start korepi.exe\n");
         } else {
+
             inject(pi.hProcess, std::filesystem::absolute(dll).string().c_str());
             Sleep(500);
             ResumeThread(pi.hThread);

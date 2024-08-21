@@ -8,13 +8,13 @@
 #include "SimpleIni.h"
 
 static CSimpleIniA ini;
-std::optional<std::string> SelectFile(const char* filter, const char* title)
-{
+
+std::optional<std::string> SelectFile(const char *filter, const char *title) {
     auto currPath = std::filesystem::current_path();
 
     // common dialog box structure, setting all fields to 0 is important
-    OPENFILENAMEA ofn = { 0 };
-    char szFile[260] = { 0 };
+    OPENFILENAMEA ofn = {0};
+    char szFile[260] = {0};
 
     // Initialize remaining fields of OPENFILENAME structure
     ofn.lStructSize = sizeof(ofn);
@@ -38,8 +38,8 @@ std::optional<std::string> SelectFile(const char* filter, const char* title)
 }
 
 
-std::optional<std::string> GetOrSelectPath(CSimpleIniA& ini, const char* section, const char* name, const char* friendName, const char* filter)
-{
+std::optional<std::string>
+GetOrSelectPath(CSimpleIniA &ini, const char *section, const char *name, const char *friendName, const char *filter) {
     auto savedPath = ini.GetValue(section, name);
     if (savedPath != nullptr)
         return std::string(reinterpret_cast<const char *const>(savedPath));
@@ -54,8 +54,8 @@ std::optional<std::string> GetOrSelectPath(CSimpleIniA& ini, const char* section
     ini.SetValue(section, name, selectedPath->c_str());
     return selectedPath;
 }
-int FindProcessId(const std::string& processName)
-{
+
+int FindProcessId(const std::string &processName) {
     int pid = 0;
 
     HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -63,13 +63,10 @@ int FindProcessId(const std::string& processName)
     ZeroMemory(&process, sizeof(process));
     process.dwSize = sizeof(process);
 
-    if (Process32First(snapshot, &process))
-    {
-        do
-        {
+    if (Process32First(snapshot, &process)) {
+        do {
             std::wstring ws(process.szExeFile);
-            if (std::string(ws.begin(), ws.end()) == processName)
-            {
+            if (std::string(ws.begin(), ws.end()) == processName) {
                 pid = process.th32ProcessID;
                 break;
             }
@@ -81,11 +78,11 @@ int FindProcessId(const std::string& processName)
     return pid;
 }
 
-bool OpenGenshinProcess(HANDLE* phProcess, HANDLE* phThread)
-{
+bool OpenGenshinProcess(HANDLE *phProcess, HANDLE *phThread) {
 
 
-    auto filePath = GetOrSelectPath(ini, "Inject", "GenshinPath", "genshin path", "Executable\0GenshinImpact.exe;YuanShen.exe\0");
+    auto filePath = GetOrSelectPath(ini, "Inject", "GenshinPath", "genshin path",
+                                    "Executable\0GenshinImpact.exe;YuanShen.exe\0");
     auto commandline = ini.GetValue("Inject", "GenshinCommandLine");
 
     LPSTR lpstr = commandline == nullptr ? nullptr : const_cast<LPSTR>(commandline);
@@ -93,8 +90,7 @@ bool OpenGenshinProcess(HANDLE* phProcess, HANDLE* phThread)
         return false;
 
     DWORD pid = FindProcessId("explorer.exe");
-    if (pid == 0)
-    {
+    if (pid == 0) {
         ERR("Can't find 'explorer' pid!\n");
         return false;
     }
@@ -106,20 +102,18 @@ bool OpenGenshinProcess(HANDLE* phProcess, HANDLE* phThread)
 
     HANDLE hToken;
     BOOL TokenRet = OpenProcessToken(GetCurrentProcess(), TOKEN_ALL_ACCESS, &hToken);
-    if (!TokenRet)
-    {
+    if (!TokenRet) {
         ERR("Privilege escalation failed!\n");
         return false;
     }
     SIZE_T lpsize = 0;
     InitializeProcThreadAttributeList(NULL, 1, 0, &lpsize);
 
-    char* temp = new char[lpsize];
-    LPPROC_THREAD_ATTRIBUTE_LIST AttributeList = (LPPROC_THREAD_ATTRIBUTE_LIST)temp;
+    char *temp = new char[lpsize];
+    LPPROC_THREAD_ATTRIBUTE_LIST AttributeList = (LPPROC_THREAD_ATTRIBUTE_LIST) temp;
     InitializeProcThreadAttributeList(AttributeList, 1, 0, &lpsize);
     if (!UpdateProcThreadAttribute(AttributeList, 0, PROC_THREAD_ATTRIBUTE_PARENT_PROCESS,
-                                   &handle, sizeof(HANDLE), NULL, NULL))
-    {
+                                   &handle, sizeof(HANDLE), NULL, NULL)) {
         DBG("UpdateProcThreadAttribute failed ! (%d).\n\n", GetLastError());
     }
     if (!handle) {
@@ -132,17 +126,14 @@ bool OpenGenshinProcess(HANDLE* phProcess, HANDLE* phThread)
     PROCESS_INFORMATION pi{};
     BOOL result = CreateProcessAsUserA(hToken, filePath->c_str(), lpstr,
                                        0, 0, 0, EXTENDED_STARTUPINFO_PRESENT | CREATE_SUSPENDED, 0,
-                                       CurrentDirectory.c_str(), (LPSTARTUPINFOA)&si, &pi);
+                                       CurrentDirectory.c_str(), (LPSTARTUPINFOA) &si, &pi);
 
     bool isOpened = result;
-    if (isOpened)
-    {
+    if (isOpened) {
         ini.SaveFile("cfg.ini");
         *phThread = pi.hThread;
         *phProcess = pi.hProcess;
-    }
-    else
-    {
+    } else {
         ERR("Failed to create game process. %d\n", GetLastError());
         ERR("If you have problem with GenshinImpact.exe path. You can change it manually in cfg.ini.\n");
     }
@@ -153,18 +144,17 @@ bool OpenGenshinProcess(HANDLE* phProcess, HANDLE* phThread)
 }
 
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
     ini.SetUnicode();
     ini.LoadFile("cfg.ini");
     INIT_LOGGER("CrackPipe", RGB(74, 255, 155), RGB(35, 173, 252), RGB(252, 35, 60), RGB(71, 245, 103));
     HANDLE hProcess, hThread;
-    if (!OpenGenshinProcess(&hProcess, &hThread))
-    {
+    if (!OpenGenshinProcess(&hProcess, &hThread)) {
         ERR("Failed to open GenshinImpact process.\n\n");
         system("pause");
         return 1;
     }
-    const char* val = ini.GetValue("inject", "secrets");
+    const char *val = ini.GetValue("inject", "secrets");
     if (!val) {
         val = R"({{"path":"{}","discordId":"0","role":"31","secret_extra":"frAQBc8W","isEnterDoorLoad":"true"}})";
         ini.SetValue("inject", "secrets", val);
@@ -178,8 +168,14 @@ int main(int argc, char* argv[]) {
             val,
             std::make_format_args(path));
     replace_all(i_want_to_be_cool_when_i_grow_up, "\\", "\\\\");
-    ManualMapDLL_(hProcess, currentDllPath.string(), i_want_to_be_cool_when_i_grow_up);
-    ManualMapDLL_(hProcess, (std::filesystem::current_path() / "crackpipe.dll").string(), "");
+    void *korepibase = ManualMapDLL_(hProcess, currentDllPath.string(), i_want_to_be_cool_when_i_grow_up);
+    std::string basestr = std::format("{};test", korepibase);
+    LOG("%s\n", basestr.c_str());
+    if (std::filesystem::exists(std::filesystem::current_path() / "crackpipedev.dll")) {
+        ManualMapDLL_(hProcess, (std::filesystem::current_path() / "crackpipedev.dll").string(), basestr);
+    } else {
+        ManualMapDLL_(hProcess, (std::filesystem::current_path() / "crackpipe.dll").string(), basestr);
+    }
     ResumeThread(hThread);
-    Sleep(5000);
+    system("pause");
 }
