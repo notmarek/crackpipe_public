@@ -33,13 +33,13 @@ struct MANUAL_MAPPING_DATA {
     BYTE *pbase;
     HINSTANCE hMod;
     DWORD fdwReasonParam;
-    LPVOID reservedParam;
+    void *entryPoint;
     BOOL SEHSupport;
     char secrets[0x2000];
 };
 
 
-void *ManualMapDLL_(HANDLE hProc, const std::string &filepath, const std::string &security) {
+void *ManualMapDLL_(HANDLE hProc, const std::string &filepath, const std::string &security, void *entryPoint) {
     std::ifstream file(filepath, std::ios::in | std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
         ERR("Error while reading DLL file!\n");
@@ -55,7 +55,7 @@ void *ManualMapDLL_(HANDLE hProc, const std::string &filepath, const std::string
     BYTE *fileContent = (BYTE *) memblock;
 
     // Manual map injection will help us to be like an assassin
-    auto result = ManualMapDLL(hProc, fileContent, size, security);
+    auto result = ManualMapDLL(hProc, fileContent, size, security, entryPoint);
 
     delete[] memblock;
 
@@ -64,7 +64,8 @@ void *ManualMapDLL_(HANDLE hProc, const std::string &filepath, const std::string
 
 MANUAL_MAPPING_DATA *__stdcall Shellcode(MANUAL_MAPPING_DATA *pData);
 
-void *ManualMapDLL(HANDLE hProc, BYTE *pSrcData, SIZE_T FileSize, const std::string &security, bool ClearHeader,
+void *ManualMapDLL(HANDLE hProc, BYTE *pSrcData, SIZE_T FileSize, const std::string &security, void *entryPoint,
+                   bool ClearHeader,
                    bool ClearNonNeededSections, bool AdjustProtections, bool SEHExceptionSupport, DWORD fdwReason) {
     IMAGE_NT_HEADERS *pOldNtHeader = nullptr;
     IMAGE_OPTIONAL_HEADER *pOldOptHeader = nullptr;
@@ -101,6 +102,8 @@ void *ManualMapDLL(HANDLE hProc, BYTE *pSrcData, SIZE_T FileSize, const std::str
     MANUAL_MAPPING_DATA data{0};
     data.pLoadLibraryA = LoadLibraryA;
     data.pGetProcAddress = GetProcAddress;
+    if (entryPoint != nullptr)
+        data.entryPoint = entryPoint;
     strcpy_s(data.secrets, security.c_str());
 #ifdef _WIN64
     data.pRtlAddFunctionTable = (f_RtlAddFunctionTable) RtlAddFunctionTable;
@@ -309,7 +312,12 @@ MANUAL_MAPPING_DATA *__stdcall Shellcode(MANUAL_MAPPING_DATA *pData) {
 #ifdef _WIN64
     auto _RtlAddFunctionTable = pData->pRtlAddFunctionTable;
 #endif
-    auto _DllMain = reinterpret_cast<f_DLL_ENTRY_POINT>(pBase + pOpt->AddressOfEntryPoint);
+    f_DLL_ENTRY_POINT _DllMain;
+    if (pData->entryPoint) {
+        _DllMain = reinterpret_cast<f_DLL_ENTRY_POINT>(pBase + (uint64_t) pData->entryPoint);
+    } else {
+        _DllMain = reinterpret_cast<f_DLL_ENTRY_POINT>(pBase + pOpt->AddressOfEntryPoint);
+    }
 
     BYTE *LocationDelta = pBase - pOpt->ImageBase;
     if (LocationDelta) {
@@ -386,7 +394,7 @@ MANUAL_MAPPING_DATA *__stdcall Shellcode(MANUAL_MAPPING_DATA *pData) {
 #endif
 
 
-    _DllMain(pBase, pData->fdwReasonParam,  &pData->secrets);
+    _DllMain(pBase, pData->fdwReasonParam, &pData->secrets);
 
     if (ExceptionSupportFailed)
         pData->hMod = reinterpret_cast<HINSTANCE>(0x505050);

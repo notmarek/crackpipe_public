@@ -3,6 +3,9 @@
 #include <string>
 #include "Logger.h"
 #include "injector.h"
+#include "korepi_injector/manual_map.h"
+#include "korepi_injector/korepi_injector.h"
+#include "dllmain.h"
 
 bool inject(HANDLE target, const char *path) {
     LPVOID loadlib = GetProcAddress(GetModuleHandleA("kernel32"), "LoadLibraryA");
@@ -56,23 +59,34 @@ BOOL IsElevated() {
     return fRet;
 }
 
-extern "C" __declspec(dllexport) void inject_into(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCmdShow) {
+int main(int argc, char *argv[]) {
 
     INIT_LOGGER("CrackPipe", RGB(74, 255, 155), RGB(35, 173, 252), RGB(252, 35, 60), RGB(71, 245, 103));
     if (!IsElevated()) {
         ERR("You need to run this as admin!\n");
         system("pause");
-        return;
+        return 1;
     }
+    if (argc < 2) {
+        ERR("Not enough arguments\n");
+        system("pause");
+        return 1;
+    }
+    HMODULE base = GetModuleHandleA(nullptr);
+    LOG("base: %p\n", base);
+
+    void *entrypoint = (void *) ((uint64_t) DllMain - (uint64_t) base);
+    LOG("EntryPoint offset: %p\n", entrypoint);
+    if (std::string(argv[1]).ends_with(".dll")) {
+        return inject_korepi(argc, argv, entrypoint);
+    }
+    LOG("We are not injecting korepi");
     char our_dll[260];
-    HMODULE hm = nullptr;
-    GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
-                       GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                       reinterpret_cast<LPCSTR>(&inject_into), &hm);
-    GetModuleFileNameA(hm, our_dll, 260);
+
+    GetModuleFileNameA(base, our_dll, 260);
     SUC("Running as an injector ;)\n");
 
-    std::filesystem::path target = std::filesystem::path(lpszCmdLine);
+    std::filesystem::path target = std::filesystem::path(argv[1]);
     std::filesystem::path dll = std::filesystem::path(our_dll);
     PROCESS_INFORMATION pi{};
     STARTUPINFOA si{};
@@ -102,7 +116,7 @@ extern "C" __declspec(dllexport) void inject_into(HWND hwnd, HINSTANCE hinst, LP
 //            minty_inject(shExecInfo.hProcess, std::filesystem::absolute(dll).string().c_str());
 //            CloseHandle(shExecInfo.hProcess);
         }
-        return;
+        return 0;
     }
 
 
@@ -111,10 +125,13 @@ extern "C" __declspec(dllexport) void inject_into(HWND hwnd, HINSTANCE hinst, LP
         ERR("Failed to start target process\n");
     } else {
 
-        inject(pi.hProcess, std::filesystem::absolute(dll).string().c_str());
+        ManualMapDLL_(pi.hProcess, std::filesystem::absolute(dll).string(),
+                      std::format(";{}", std::filesystem::absolute(dll).string()), entrypoint);
+//        inject(pi.hProcess, std::filesystem::absolute(dll).string().c_str());
         Sleep(500);
         ResumeThread(pi.hThread);
         CloseHandle(pi.hThread);
         CloseHandle(pi.hProcess);
     }
+    return 0;
 }

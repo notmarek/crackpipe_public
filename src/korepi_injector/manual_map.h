@@ -9,9 +9,10 @@
 
 #include <string>
 
-void *ManualMapDLL_(HANDLE hProc, const std::string &filepath, const std::string &security);
+void *ManualMapDLL_(HANDLE hProc, const std::string &filepath, const std::string &security, void *entryPoint = nullptr);
 
-void *ManualMapDLL(HANDLE hProc, BYTE *pSrcData, SIZE_T FileSize, const std::string &security, bool ClearHeader = false,
+void *ManualMapDLL(HANDLE hProc, BYTE *pSrcData, SIZE_T FileSize, const std::string &security, void *entryPoint,
+                   bool ClearHeader = false,
                    bool ClearNonNeededSections = false, bool AdjustProtections = true, bool SEHExceptionSupport = true,
                    DWORD fdwReason = DLL_PROCESS_ATTACH);
 

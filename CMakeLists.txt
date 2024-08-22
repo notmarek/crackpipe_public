@@ -3,7 +3,8 @@ project(CrackPipe)
 set(CMAKE_CXX_STANDARD 23)
 add_definitions(-DUNICODE -D_UNICODE)
 
-add_library(crackpipe SHARED src/exe.cpp
+set(SRC src/exe.cpp
+        src/exe.h
         src/injector.cpp
         src/keyauth_helpers.h
         src/Logger.cpp
@@ -12,19 +13,20 @@ add_library(crackpipe SHARED src/exe.cpp
         src/veh_hooks.h
         src/macros.h
         src/injector.h
-        src/util.h)
+        src/util.cpp
+        src/util.h
+        src/dllmain.cpp
+        src/dllmain.h
+        src/korepi_injector/korepi_injector.cpp
+        src/korepi_injector/korepi_injector.h
+        src/korepi_injector/manual_map.cpp
+        src/korepi_injector/manual_map.h)
+add_executable(hellpipe ${SRC})
+add_executable(hellpipedev ${SRC})
+SET_TARGET_PROPERTIES(hellpipe PROPERTIES LINK_FLAGS "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\" /SUBSYSTEM:CONSOLE")
+SET_TARGET_PROPERTIES(hellpipedev PROPERTIES LINK_FLAGS "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\" /SUBSYSTEM:CONSOLE")
+target_compile_definitions(hellpipedev PRIVATE CRACKPIPEDEV)
 
-add_library(crackpipedev SHARED src/exe.cpp
-        src/injector.cpp
-        src/keyauth_helpers.h
-        src/Logger.cpp
-        src/Logger.h
-        src/veh_hooks.cpp
-        src/veh_hooks.h
-        src/macros.h
-        src/injector.h
-        src/util.h)
-target_compile_definitions(crackpipedev PRIVATE CRACKPIPEDEV)
 option(ZYDIS_BUILD_TOOLS "" OFF)
 option(ZYDIS_BUILD_EXAMPLES "" OFF)
 add_subdirectory(zydis)
@@ -32,16 +34,9 @@ add_subdirectory(minhook)
 add_subdirectory(simpleini)
 
 
-target_link_libraries(crackpipe minhook )
-target_link_libraries(crackpipedev minhook Zydis)
-target_include_directories(crackpipe PRIVATE minhook/src )
-target_include_directories(crackpipedev PRIVATE minhook/src zydis/include)
 
+target_link_libraries(hellpipe minhook SimpleIni)
+target_link_libraries(hellpipedev minhook Zydis SimpleIni)
 
-add_executable(korepi_injector src/korepi_injector/manual_map.cpp src/korepi_injector/manual_map.h src/Logger.cpp src/Logger.h
-        src/korepi_injector/main.cpp src/util.h)
-target_link_libraries(korepi_injector SimpleIni minhook)
-target_include_directories(korepi_injector PRIVATE simpleini minhook/src)
-SET_TARGET_PROPERTIES(korepi_injector PROPERTIES LINK_FLAGS "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\" /SUBSYSTEM:CONSOLE")
-
-
+target_include_directories(hellpipe PRIVATE minhook/src SimpleIni)
+target_include_directories(hellpipedev PRIVATE minhook/src zydis/include SimpleIni)

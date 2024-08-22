@@ -82,7 +82,7 @@ bool Logger::Printf(const char *type, const char *line_number, unsigned short co
 
     SetConsoleTextAttribute(this->out, 0x000f);
     if (!WriteConsoleA(this->out, "[", 1, nullptr, nullptr)) {
-        Sleep(300);
+        Sleep(800);
         if (!WriteConsoleA(this->out, "[", 1, nullptr, nullptr)) {
             SetupConsole(true);
             this->ColorPrint("Welcome", 0x3);

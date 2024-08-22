@@ -3,9 +3,9 @@
 #include <format>
 #include <filesystem>
 #include "../Logger.h"
-#include "../util.h"
 #include "manual_map.h"
 #include "SimpleIni.h"
+#include "../util.h"
 
 static CSimpleIniA ini;
 
@@ -144,10 +144,10 @@ bool OpenGenshinProcess(HANDLE *phProcess, HANDLE *phThread) {
 }
 
 
-int main(int argc, char *argv[]) {
+int inject_korepi(int argc, char *argv[], void *entrypoint) {
     ini.SetUnicode();
     ini.LoadFile("cfg.ini");
-    INIT_LOGGER("CrackPipe", RGB(74, 255, 155), RGB(35, 173, 252), RGB(252, 35, 60), RGB(71, 245, 103));
+//    INIT_LOGGER("CrackPipe", RGB(74, 255, 155), RGB(35, 173, 252), RGB(252, 35, 60), RGB(71, 245, 103));
     HANDLE hProcess, hThread;
     if (!OpenGenshinProcess(&hProcess, &hThread)) {
         ERR("Failed to open GenshinImpact process.\n\n");
@@ -160,7 +160,10 @@ int main(int argc, char *argv[]) {
         ini.SetValue("inject", "secrets", val);
     }
     ini.SaveFile("cfg.ini");
-
+    char our_dll[260];
+    HMODULE hm = GetModuleHandleA(nullptr);
+    GetModuleFileNameA(hm, our_dll, 260);
+    std::filesystem::path dll = std::filesystem::absolute(std::filesystem::path(our_dll));
     std::string filename = (argc == 2 ? argv[1] : "korepi.dll");
     std::filesystem::path currentDllPath = std::filesystem::current_path() / filename;
     std::string path = std::filesystem::current_path().string();
@@ -169,13 +172,15 @@ int main(int argc, char *argv[]) {
             std::make_format_args(path));
     replace_all(i_want_to_be_cool_when_i_grow_up, "\\", "\\\\");
     void *korepibase = ManualMapDLL_(hProcess, currentDllPath.string(), i_want_to_be_cool_when_i_grow_up);
-    std::string basestr = std::format("{};test", korepibase);
-    LOG("%s\n", basestr.c_str());
-    if (std::filesystem::exists(std::filesystem::current_path() / "crackpipedev.dll")) {
-        ManualMapDLL_(hProcess, (std::filesystem::current_path() / "crackpipedev.dll").string(), basestr);
-    } else {
-        ManualMapDLL_(hProcess, (std::filesystem::current_path() / "crackpipe.dll").string(), basestr);
-    }
+    std::string basestr = std::format("{};{}", korepibase, dll.string());
+//    if (std::filesystem::exists(std::filesystem::current_path() / "crackpipedev.dll")) {
+//        ManualMapDLL_(hProcess, (std::filesystem::current_path() / "crackpipedev.dll").string(), basestr);
+//    } else {
+//        ManualMapDLL_(hProcess, (std::filesystem::current_path() / "crackpipe.dll").string(), basestr);
+//    }
+//    void* entrypoint = (void*)((uint64_t)DllMain - (uint64_t)hm);
+    ManualMapDLL_(hProcess, dll.string(), basestr, entrypoint);
     ResumeThread(hThread);
     system("pause");
+    return 0;
 }

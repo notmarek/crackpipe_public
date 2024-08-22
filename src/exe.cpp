@@ -12,6 +12,9 @@
 #include <fstream>
 #include <cinttypes>
 #include "util.h"
+#include "korepi_injector/manual_map.h"
+#include "exe.h"
+#include "dllmain.h"
 
 #ifdef CRACKPIPEDEV
 
@@ -26,8 +29,8 @@
 #define LIMIT 3
 
 #pragma comment(lib, "ntdll.lib")
-
-
+void *pBase;
+std::string self_path;
 #pragma region("minty")
 void *o_alert;
 
@@ -39,15 +42,15 @@ int32_t *alert(int32_t arg1, char arg2, int32_t arg3, const char *arg4) {
 void *o_minty_inject;
 
 int64_t *minty_inject(HANDLE target, const char *path) {
-    char our_dll[260];
-    HMODULE hm = nullptr;
-    GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
-                       GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                       reinterpret_cast<LPCSTR>(&minty_inject), &hm);
-    GetModuleFileNameA(hm, our_dll, 260);
     LOG("Injecting along with Minty.\n");
+
     ORIG(minty_inject, target, path);
-    ORIG(minty_inject, target, our_dll);
+    void *entrypoint = (void *) ((uint64_t) DllMain - (uint64_t) pBase);
+    ManualMapDLL_(target, self_path, ";aaaaah", entrypoint);
+
+
+
+//    ORIG(minty_inject, target, our_dll);
     unhook_and_leave();
     return 0;
 }
@@ -254,7 +257,7 @@ uint64_t return_true() {
 }
 
 void *o_read;
-const std::string readResponse =
+const char* readResponse =
         R"(HTTP/1.1 200 OK
 Content-Length: 64
 Connection: close
@@ -264,7 +267,7 @@ size_t readIdx = 0;
 
 size_t read(void *a1, void *buf, int numBytes) {
 //    return ORIG(read, a1, buf, numBytes);
-    const auto ret = readResponse.substr(readIdx, numBytes);
+    const auto ret = std::string(readResponse).substr(readIdx, numBytes);
     memcpy(buf, ret.c_str(), ret.size());
     readIdx += ret.size();
     return ret.size();
@@ -272,7 +275,7 @@ size_t read(void *a1, void *buf, int numBytes) {
 
 bool fakeResp = false;
 bool fakeVer = false;
-const std::string verinfo = R"|({
+const char* verinfo = R"|({
     "msg": "success",
     "code": 200,
     "secrets": {
@@ -298,8 +301,8 @@ const std::string verinfo = R"|({
     },
     "sign2": "eMDldspy36kqMIRWWiGE/3J2e6/KAWdC8heSec80zZV8Ck2Z6mesGxGM8hPPkJODChzi8fA6xILl1VdNrZcG7saYa3TL/cyngmiofl0ZO52gepyMqQTY9b91iV1cfPa4SiRaNIag/l/5yAXaCLIyd5SkJ5ie3zu8xw9Pc9UM0CAGcdOO8HlnQNzRyoUtJoGcezdio7rsX/bLPbKC7zx7V1na7y9HULBKjQ1ysDJaRhBFpUthDKD5DZS4zzSWOnST5nc129X/XDDL9H9taRrUwECPnMe1dKjW/dvReKpheimmPLPYr425kTKPUbOh/wVVJuPR0cstrikuDrvxx4JmOw=="
 })|";
-const std::string resp = R"({"msg": "AtZAfcAb+qtSipkXI9CP8u5XUYPGyCbGq5C/VYyt6tcelFYehMuYs0q8m/q+RwGx0/jOB3jDRAqjcqmunJpoKrIFV9W/YC9wzY+GaSU2L8oNQHlpx9KgJ0K50aqwxQD0dKiWmd16b76sLCn8GvpVrSk1k6SoFtUtPe30Cf1BkOsFD2oxSGBioUK22MkPFO2uj5xIXfZ5tC1dB4cS5ttzVlDiLPXY1hlJBqgFpZTj8znRz5qpMhflK5euefmKRPTKzwt+JHFF2YImsmDf49bMCgS6ZIwHL/jbK8dRJwFRjfkZjvpw2XxrL3wKubLqZKjUG3lHP6oKijmcWFTeu68xHphRKmqy43Gg3MZ1wCoYwcQL6tPPoqMy6TJwJdt/mBfhklPRq0XcTAjpnTIJeIo7zH/L1kFaGRAVFtqbwGLIIN08bb+7/tV3MOOc8BEp4RCb721hakBRNFqJAeYrt7yzr/VeK2igLuByrTcBkd0SOIB5LgI5K/qrMf/90bB8sfcicIgJXSVxyuuov45UXM2Rdo4YiL5M8b4LCJwhEkmplS8=", "code": 200})";
-const std::string oldresp =
+const char* resp = R"({"msg": "AtZAfcAb+qtSipkXI9CP8u5XUYPGyCbGq5C/VYyt6tcelFYehMuYs0q8m/q+RwGx0/jOB3jDRAqjcqmunJpoKrIFV9W/YC9wzY+GaSU2L8oNQHlpx9KgJ0K50aqwxQD0dKiWmd16b76sLCn8GvpVrSk1k6SoFtUtPe30Cf1BkOsFD2oxSGBioUK22MkPFO2uj5xIXfZ5tC1dB4cS5ttzVlDiLPXY1hlJBqgFpZTj8znRz5qpMhflK5euefmKRPTKzwt+JHFF2YImsmDf49bMCgS6ZIwHL/jbK8dRJwFRjfkZjvpw2XxrL3wKubLqZKjUG3lHP6oKijmcWFTeu68xHphRKmqy43Gg3MZ1wCoYwcQL6tPPoqMy6TJwJdt/mBfhklPRq0XcTAjpnTIJeIo7zH/L1kFaGRAVFtqbwGLIIN08bb+7/tV3MOOc8BEp4RCb721hakBRNFqJAeYrt7yzr/VeK2igLuByrTcBkd0SOIB5LgI5K/qrMf/90bB8sfcicIgJXSVxyuuov45UXM2Rdo4YiL5M8b4LCJwhEkmplS8=", "code": 200})";
+const char* oldresp =
         R"({"msg": "vpJSftgQ2noDAZR3Iri/ForvdhDZvxwlJCXowV9TgKSs+BoMyBMOIuxjpDcMTSov1thaXhg/d9aAKcpxOP6glQ3bSd8bHIGMku3Ck/33VdYhtzx4HwC4Lel5mVGZ9+2jffsIgHyIwxMl+8kYwh/QGQRlkC8zFfyNaMszsZiOxIJCy/RMYfI3buvCDPH/4D1/VxysPnaX+QtrVrs7Bt74byqnd38bi0GhpllEWL7CO+7fI+vMe2OSv6s0CUaOqzhDC5N8wIkHsthyVyP+GYoltTov3Bu5iaxmgZc/eYQPTkTWQ759pIVNjKJwnQI3EtOEdrRog6LAkA/CMGwMwBkScvY508Z3KhnNqqIIF9RpYLI6rdST+o2t5gIK4sElQg/2wHZT6wSm23t7YdxnwzEFZysv/H0y63iI4NMUmyZIkRvCyxlWVMpTt/rV9qubdbCjGDxG7A/0LbxCJBfBgEWu4Krpp1S+hk4qgIB+2apCh5sxU76mLzQdFLzNrgmbQADapyDO6rWw777F9FKlo/r9II8kISi/+2FxXp7TZE3ALbcyUo7zKucahsq7u9ucENm64D3PKV4YZCHchQY7xyYI4DaC1PQzleJxGaGbCoBQ0PZK7f33d3N3qB10OaEfe2de4uTcOKbVAjtjSLrlZcMGiZd40Bho76xCtcgAKG2FDxbH/PJo4BoIYwqiDzqpmxXBOsn0JqKLGLaAyU840GAgyLO62lE7/A26w+B9q7hkOIcKlfXZpdwjsll/dADe2U/uF5nrLxEOUGDx9gbUoB95KLD1S3KCCyaLuv8j4imt2E9EgDzk/1XdIwnbPGAECajV5z4yTpMuyD9XBhmJQIFutw==", "code": 200})";
 
 void *o_curl_easy_perform;
@@ -314,17 +317,18 @@ size_t curl_easy_perform(void *a1) {
     if (fakeVer) {
         LOG("Serving fake versions info.\n");
         fakeVer = false;
-        callback((char *) verinfo.c_str(), verinfo.size(), 1, userData);
+        callback((char *) verinfo, strlen(verinfo) + 1, 1, userData);
         return 0;
     } else if (fakeResp && old_launcher) {
-        LOG("Serving fake sub info.\n");
+        LOG("Serving OLD fake sub info.\n");
         fakeResp = false;
-        callback((char *) oldresp.c_str(), oldresp.size(), 1, userData);
+        callback((char *) oldresp, strlen(oldresp) + 1, 1, userData);
         return 0;
     } else if (fakeResp) {
         LOG("Serving fake sub info.\n");
+        LOG("Subinfo: %s\n", resp);
         fakeResp = false;
-        callback((char *) resp.c_str(), resp.size(), 1, userData);
+        callback((char *) resp, strlen(resp) + 1, 1, userData);
         return 0;
     }
     return ORIG(curl_easy_perform, a1);
@@ -501,14 +505,12 @@ void minty_unk(char arg1, void *arg2, int32_t arg3, int64_t arg4, int64_t arg5, 
     return ORIG(minty_unk, 0, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12);
 }
 
-struct StartupData {
-    void *pBase;
-    void *korepibase;
-};
 
 void start(StartupData *startupData) {
+    self_path = startupData->path;
     void *korepibase = startupData->korepibase;
-    BYTE *pBase = (BYTE *) startupData->pBase;
+    if (strcmp((char *) korepibase, "") == 0) korepibase = nullptr;
+    pBase = (void *) startupData->pBase;
     int i = 0;
     HMODULE hm = GetModuleHandleA(nullptr);
     char module_path[260];
@@ -541,14 +543,17 @@ void start(StartupData *startupData) {
     MH_STATUS status = MH_Initialize();
     char *endptr;
 
+
+    LOG("path: '%s', korepibase: %s\n", self_path.c_str(), (char *) korepibase);
+
     LOG("our base is at %p\n", pBase);
-    auto *pOpt = &reinterpret_cast<IMAGE_NT_HEADERS *>(pBase +
+    auto *pOpt = &reinterpret_cast<IMAGE_NT_HEADERS *>((BYTE *) pBase +
                                                        reinterpret_cast<IMAGE_DOS_HEADER *>((uintptr_t) pBase)->e_lfanew)->OptionalHeader;
     if (pOpt->DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size) {
-        auto *pImportDescr = reinterpret_cast<IMAGE_IMPORT_DESCRIPTOR *>(pBase +
+        auto *pImportDescr = reinterpret_cast<IMAGE_IMPORT_DESCRIPTOR *>((BYTE *) pBase +
                                                                          pOpt->DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
         while (pImportDescr->Name) {
-            char *szMod = reinterpret_cast<char *>(pBase + pImportDescr->Name);
+            char *szMod = reinterpret_cast<char *>((BYTE *) pBase + pImportDescr->Name);
             DBG("Loading %s again so we can safely detach.\n", szMod);
             LoadLibraryA(szMod);
             ++pImportDescr;
@@ -586,7 +591,7 @@ void start(StartupData *startupData) {
         //        89 05 e7 a1 53 00 48 8d 8c 24 40 02 00 00
         int32_t *role = (int32_t *) (base + 0x56dccc);
 //        int32_t *isretard = (int32_t *) (base + 0x56dcc8);
-        if (*role == (int32_t)1) {
+        if (*role == (int32_t) 1) {
             LOG("role is at %p\n", role);
             *role = 31;
         }
@@ -639,7 +644,7 @@ void start(StartupData *startupData) {
                                  runtime_address, &result);
         LOG("Role value is stored at base + 0x%x its value is %d\n", result - (ZyanU64) base, *(int *) result);
         if (*(int *) result == 1)
-            *(int*)result = 31;
+            *(int *) result = 31;
         LOG(" %s\n", instruction.text);
 #endif
 //
@@ -665,7 +670,7 @@ void start(StartupData *startupData) {
     }
     VehUtils::veh_hooks = std::vector<VehHook>();
     VehUtils::bypass_addrs = std::vector<void *>();
-//    bool was_vmp_bypassed = bypass_vmp();
+    bool was_vmp_bypassed = bypass_vmp();
 //    API_HOOK("kernel32.dll", "LoadResource", loadrsrc);
 //    API_HOOK("kernel32.dll", "LockResource", lockrsrc);
 //    HOOK_IF_FOUND(nullptr, "manual_map", "48 89 5C 24 ? 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 F0 BF FF FF",
@@ -739,24 +744,3 @@ void start(StartupData *startupData) {
 
 }
 
-extern "C" __declspec(dllexport) BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, const char *korepibase) {
-    if (fdwReason == DLL_PROCESS_ATTACH) {
-//        std::string krpi_base = std::string(korepibase);
-//        MessageBoxA(nullptr, korepibase, "jell", 1);
-        StartupData *startupData;
-        startupData = (StartupData *) malloc(sizeof(StartupData));
-        startupData->korepibase = nullptr;
-        if (korepibase != nullptr) {
-            startupData->korepibase = malloc(strlen(korepibase));
-            memcpy(startupData->korepibase, korepibase, strlen(korepibase) + 1);
-        }
-        startupData->pBase = hinstDLL;
-        const auto thread = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE) start, startupData, 0, nullptr);
-        DisableThreadLibraryCalls(hinstDLL);
-        if (thread) {
-            CloseHandle(thread);
-        }
-    }
-
-    return true;
-}
